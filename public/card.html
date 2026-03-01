@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bingo Card – Music Bingo</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <nav>
+    <span class="logo">🎵 Music Bingo</span>
+    <a href="/">Home</a>
+  </nav>
+
+  <div class="container" style="padding-top:1.25rem; padding-bottom:3rem;">
+
+    <!-- Status banner -->
+    <div id="global-alert" style="margin-bottom:1rem;"></div>
+
+    <!-- Player name prompt (shown before card loads) -->
+    <div id="name-section" class="card section" style="max-width:420px; margin:0 auto;">
+      <h2>Enter your name</h2>
+      <p style="margin-bottom:1rem;">We'll use your name when you claim BINGO!</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="player-name">Your name</label>
+          <input type="text" id="player-name" placeholder="e.g. Jane" autocomplete="off" />
+        </div>
+        <button class="btn btn-green" id="name-btn">Let's play</button>
+      </div>
+    </div>
+
+    <!-- Card section (hidden until name entered) -->
+    <div id="card-section" style="display:none;">
+
+      <!-- Now playing -->
+      <div id="now-playing" style="display:none; margin-bottom:1rem;">
+        <img id="np-art" src="" alt="" />
+        <div class="np-info">
+          <div class="np-title">
+            <span class="pulse-dot"></span>
+            <span id="np-title">—</span>
+          </div>
+          <div class="np-artist" id="np-artist"></div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+        <div>
+          <h2 id="card-heading">Card #<span id="card-number"></span></h2>
+          <span id="game-status" class="status-pill status-idle">Waiting for game…</span>
+        </div>
+        <div style="display:flex; gap:.5rem; align-items:center;">
+          <span id="marked-count" style="color:var(--text-m); font-size:.85rem;"></span>
+        </div>
+      </div>
+
+      <!-- BINGO grid -->
+      <div class="bingo-header">
+        <span>B</span><span>I</span><span>N</span><span>G</span><span>O</span>
+      </div>
+      <div id="bingo-grid" class="bingo-grid"></div>
+
+      <!-- BINGO claim button -->
+      <button id="bingo-btn" disabled>BINGO!</button>
+      <div id="bingo-msg" style="text-align:center;"></div>
+
+      <!-- Played songs reference -->
+      <div class="card" style="margin-top:1.5rem;">
+        <h3>Songs played so far</h3>
+        <ol id="played-list" style="padding-left:1.25rem; line-height:1.9; margin-top:.5rem; color:var(--text-m); font-size:.9rem;">
+          <li id="no-songs-li" style="list-style:none; color:var(--text-m);">No songs played yet.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/card.js"></script>
+</body>
+</html>

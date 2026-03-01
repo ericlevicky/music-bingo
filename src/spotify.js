@@ -1,0 +1,219 @@
+/**
+ * spotify.js – Per-admin Spotify Web API client.
+ *
+ * Exports:
+ *   SpotifyClient  – class, one instance per authenticated admin
+ *   extractPlaylistId – utility to parse playlist URLs / URIs / raw IDs
+ *   buildAuthUrl      – returns the Spotify OAuth redirect URL
+ *   exchangeCode      – exchanges an auth code for token objects
+ */
+
+'use strict';
+
+const SpotifyWebApi = require('spotify-web-api-node');
+
+const SCOPES = [
+  'user-read-currently-playing',
+  'user-read-playback-state',
+  'playlist-read-private',
+  'playlist-read-collaborative',
+];
+
+/** One minute buffer before token expiry triggers a refresh. */
+const TOKEN_REFRESH_BUFFER_MS = 60_000;
+
+function _makeApi() {
+  return new SpotifyWebApi({
+    clientId: process.env.SPOTIFY_CLIENT_ID,
+    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+    redirectUri:
+      process.env.SPOTIFY_REDIRECT_URI ||
+      'http://localhost:3000/auth/spotify/callback',
+  });
+}
+
+// ─── Stateless helpers ────────────────────────────────────────────────────────
+
+/**
+ * Extract a Spotify playlist ID from a URL, URI, or raw ID string.
+ */
+function extractPlaylistId(input) {
+  if (!input) return null;
+  const urlMatch = input.match(/playlist\/([A-Za-z0-9]+)/);
+  if (urlMatch) return urlMatch[1];
+  const uriMatch = input.match(/spotify:playlist:([A-Za-z0-9]+)/);
+  if (uriMatch) return uriMatch[1];
+  if (/^[A-Za-z0-9]{22}$/.test(input)) return input;
+  return null;
+}
+
+/**
+ * Build the Spotify OAuth authorise URL.
+ * @param {string} state  CSRF token.
+ * @returns {string}
+ */
+function buildAuthUrl(state) {
+  return _makeApi().createAuthorizeURL(SCOPES, state);
+}
+
+/**
+ * Exchange an authorisation code for access + refresh tokens.
+ * @param {string} code
+ * @returns {Promise<{ accessToken, refreshToken, expiresAt }>}
+ */
+async function exchangeCode(code) {
+  const api = _makeApi();
+  const data = await api.authorizationCodeGrant(code);
+  return {
+    accessToken: data.body.access_token,
+    refreshToken: data.body.refresh_token,
+    expiresAt: Date.now() + data.body.expires_in * 1000,
+  };
+}
+
+// ─── SpotifyClient class ──────────────────────────────────────────────────────
+
+/**
+ * Stateful Spotify client bound to a single user's tokens.
+ * Automatically refreshes the access token when it approaches expiry.
+ */
+class SpotifyClient {
+  /**
+   * @param {{ accessToken: string, refreshToken: string, expiresAt: number }} tokens
+   */
+  constructor(tokens) {
+    this._api = _makeApi();
+    this._api.setAccessToken(tokens.accessToken);
+    this._api.setRefreshToken(tokens.refreshToken);
+    this._expiresAt = tokens.expiresAt;
+  }
+
+  /** Returns the current (possibly refreshed) token snapshot. */
+  getTokens() {
+    return {
+      accessToken: this._api.getAccessToken(),
+      refreshToken: this._api.getRefreshToken(),
+      expiresAt: this._expiresAt,
+    };
+  }
+
+  async _ensureValidToken() {
+    if (Date.now() < this._expiresAt - TOKEN_REFRESH_BUFFER_MS) return;
+    try {
+      const data = await this._api.refreshAccessToken();
+      this._api.setAccessToken(data.body.access_token);
+      this._expiresAt = Date.now() + data.body.expires_in * 1000;
+    } catch (err) {
+      console.error('Failed to refresh Spotify token:', err.message);
+    }
+  }
+
+  /**
+   * Fetch all playlists owned by (or followed by) the authenticated user.
+   * @returns {Promise<Array<{ id, name, trackCount, imageUrl }>>}
+   */
+  async getUserPlaylists() {
+    await this._ensureValidToken();
+    const limit = 50;
+    let offset = 0;
+    let total = Infinity;
+    const playlists = [];
+
+    while (offset < total) {
+      const data = await this._api.getUserPlaylists({ limit, offset });
+      total = data.body.total;
+      for (const pl of data.body.items) {
+        playlists.push({
+          id: pl.id,
+          name: pl.name,
+          trackCount: pl.tracks.total,
+          imageUrl: pl.images && pl.images[0] ? pl.images[0].url : null,
+        });
+      }
+      offset += limit;
+    }
+
+    return playlists;
+  }
+
+  /**
+   * Fetch all tracks from a playlist (handles Spotify's 100-item page limit).
+   * @param {string} playlistId
+   * @returns {Promise<Array<Object>>}  Normalised song objects.
+   */
+  async getPlaylistSongs(playlistId) {
+    await this._ensureValidToken();
+
+    const limit = 100;
+    let offset = 0;
+    let total = Infinity;
+    const songs = [];
+
+    while (offset < total) {
+      const data = await this._api.getPlaylistTracks(playlistId, {
+        limit,
+        offset,
+        fields:
+          'total,items(track(id,name,artists,album(name,images),duration_ms,preview_url))',
+      });
+
+      const body = data.body;
+      total = body.total;
+
+      for (const item of body.items) {
+        const track = item.track;
+        if (!track || !track.id) continue; // skip local / null tracks
+
+        songs.push({
+          id: track.id,
+          name: track.name,
+          artists: track.artists.map((a) => a.name).join(', '),
+          album: track.album.name,
+          albumArt:
+            track.album.images && track.album.images[0]
+              ? track.album.images[0].url
+              : null,
+          durationMs: track.duration_ms,
+          previewUrl: track.preview_url,
+        });
+      }
+
+      offset += limit;
+    }
+
+    return songs;
+  }
+
+  /**
+   * Get the currently-playing track.
+   * Returns null if nothing is actively playing.
+   * @returns {Promise<Object|null>}
+   */
+  async getCurrentlyPlaying() {
+    await this._ensureValidToken();
+    try {
+      const data = await this._api.getMyCurrentPlayingTrack();
+      if (!data.body || !data.body.item || !data.body.is_playing) return null;
+
+      const track = data.body.item;
+      return {
+        id: track.id,
+        name: track.name,
+        artists: track.artists.map((a) => a.name).join(', '),
+        album: track.album.name,
+        albumArt:
+          track.album.images && track.album.images[0]
+            ? track.album.images[0].url
+            : null,
+        progressMs: data.body.progress_ms,
+        durationMs: track.duration_ms,
+      };
+    } catch (err) {
+      console.error('Error fetching currently playing:', err.message);
+      return null;
+    }
+  }
+}
+
+module.exports = { SpotifyClient, extractPlaylistId, buildAuthUrl, exchangeCode };
+

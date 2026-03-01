@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – Music Bingo</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <nav>
+    <span class="logo">🎵 Music Bingo</span>
+    <a href="/">Player page</a>
+    <span style="flex:1;"></span>
+    <!-- Admin profile pill (populated by JS) -->
+    <div id="admin-profile" style="display:flex; align-items:center; gap:.6rem; font-size:.85rem;">
+      <img id="admin-pic" src="" alt="" width="28" height="28"
+           style="border-radius:50%; display:none;" />
+      <span id="admin-name" style="color:var(--text-m);"></span>
+      <a href="/auth/logout" class="btn btn-grey" style="padding:.3rem .75rem; font-size:.8rem;">Log out</a>
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top:1.5rem; padding-bottom:3rem;">
+    <h1>Admin Dashboard</h1>
+
+    <!-- Status bar -->
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.75rem; flex-wrap:wrap;">
+      <span>Game status:</span>
+      <span id="game-status" class="status-pill status-idle">Idle</span>
+      <span id="spotify-badge" style="font-size:.85rem;"></span>
+    </div>
+
+    <div id="global-alert"></div>
+
+    <!-- ── Step 1: Spotify auth ─────────────────────────────────── -->
+    <div class="section card" id="spotify-section">
+      <h2>1 · Connect Spotify</h2>
+      <p style="margin-bottom:1rem;">
+        Authorise this app to read playlists and currently-playing track from your Spotify account.
+      </p>
+      <div id="spotify-status-msg"></div>
+      <a href="/auth/spotify" class="btn btn-green" id="spotify-btn">
+        🎧 Connect with Spotify
+      </a>
+    </div>
+
+    <!-- ── Step 2: Generate cards ───────────────────────────────── -->
+    <div class="section card">
+      <h2>2 · Generate Bingo Cards</h2>
+
+      <!-- Playlist picker -->
+      <div class="form-group section" style="margin-bottom:1rem;">
+        <label for="playlist-select">Spotify Playlist</label>
+        <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
+          <select id="playlist-select" style="flex:1; min-width:200px; padding:.6rem .85rem;
+            background:var(--surface2); border:1.5px solid #444; border-radius:var(--radius);
+            color:var(--text); font-size:.95rem; outline:none;">
+            <option value="">— Connect Spotify to see your playlists —</option>
+          </select>
+          <button class="btn btn-grey" id="refresh-playlists-btn" title="Reload playlists">↺</button>
+        </div>
+        <div id="playlist-info" style="font-size:.82rem; color:var(--text-m); margin-top:.4rem;"></div>
+      </div>
+
+      <!-- Contacts -->
+      <div class="form-group section" style="margin-bottom:1rem;">
+        <label for="contacts-input">
+          Contacts (email addresses or phone numbers, one per line)
+        </label>
+        <textarea id="contacts-input" rows="6"
+          placeholder="john@example.com&#10;jane@example.com&#10;+1 555 000 1234"
+          style="width:100%; padding:.6rem .85rem; background:var(--surface2);
+            border:1.5px solid #444; border-radius:var(--radius); color:var(--text);
+            font-size:.9rem; resize:vertical; outline:none; font-family:inherit;"></textarea>
+      </div>
+
+      <div class="form-row" style="margin-bottom:1rem; align-items:flex-end;">
+        <div class="form-group" style="max-width:160px;">
+          <label for="cards-per-contact">Cards per contact</label>
+          <input type="number" id="cards-per-contact" value="1" min="1" max="10" />
+        </div>
+        <div id="total-cards-preview" style="color:var(--text-m); font-size:.85rem; padding-bottom:.4rem;">
+          0 cards total
+        </div>
+        <button class="btn btn-green" id="generate-btn" style="margin-left:auto;">Generate cards</button>
+      </div>
+
+      <div id="generate-msg"></div>
+
+      <div id="card-list-section" style="display:none; margin-top:1rem;">
+        <p style="margin-bottom:.75rem; font-size:.9rem;">
+          Share these links with your players:
+        </p>
+        <div id="card-list" class="card-list"></div>
+      </div>
+    </div>
+
+    <!-- ── Step 3: Game control ─────────────────────────────────── -->
+    <div class="section card">
+      <h2>3 · Game Control</h2>
+
+      <!-- Now playing -->
+      <div id="now-playing" style="display:none; margin-bottom:1rem;">
+        <img id="np-art" src="" alt="album art" />
+        <div class="np-info">
+          <div class="np-title">
+            <span class="pulse-dot"></span>
+            <span id="np-title">—</span>
+          </div>
+          <div class="np-artist" id="np-artist"></div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:.75rem; flex-wrap:wrap;">
+        <button class="btn btn-green" id="start-btn">▶ Start Game</button>
+        <button class="btn btn-red"   id="end-btn"   disabled>⏹ End Game</button>
+        <button class="btn btn-grey"  id="reset-btn">↺ Reset</button>
+      </div>
+      <div id="game-msg" style="margin-top:.85rem;"></div>
+    </div>
+
+    <!-- ── Step 4: Played songs & winners ──────────────────────── -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; flex-wrap:wrap;">
+      <div class="section card">
+        <h2>Played Songs</h2>
+        <p id="no-songs-msg">No songs played yet.</p>
+        <ol id="played-list" style="padding-left:1.25rem; line-height:1.8; display:none;"></ol>
+      </div>
+
+      <div class="section card">
+        <h2>🏆 Winners</h2>
+        <p id="no-winners-msg">No winners yet.</p>
+        <table id="winners-table" style="display:none;">
+          <thead><tr><th>Rank</th><th>Player</th><th>Card</th><th>Time</th></tr></thead>
+          <tbody id="winners-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Bingo</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <nav>
+    <span class="logo">🎵 Music Bingo</span>
+    <a href="/admin">Admin</a>
+  </nav>
+
+  <div class="container" style="padding-top:2rem;">
+    <div class="splash">
+      <span class="emoji">🎶</span>
+      <h1>Welcome to Music Bingo!</h1>
+      <p>The admin will share your unique card link with you.<br>
+         Enter a card number below or open the link you received.</p>
+
+      <div style="display:flex; gap:.75rem; flex-wrap:wrap; justify-content:center; margin-top:.5rem;">
+        <input type="text" id="card-id-input" placeholder="Paste your card link or ID…"
+               style="max-width:340px; border-radius:50px;" />
+        <button class="btn btn-green" id="go-btn">Go to my card</button>
+      </div>
+
+      <div id="msg" style="margin-top:.5rem;"></div>
+
+      <!-- List of cards (visible after cards have been generated) -->
+      <div id="card-links-section" style="display:none; margin-top:1.5rem;">
+        <h3 style="margin-bottom:.75rem;">Available Cards</h3>
+        <div id="card-links" class="card-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const goBtn = document.getElementById('go-btn');
+    const input = document.getElementById('card-id-input');
+    const msg   = document.getElementById('msg');
+
+    goBtn.addEventListener('click', () => {
+      const val = input.value.trim();
+      if (!val) { setMsg('Please enter a card link or ID.', 'error'); return; }
+
+      // Extract UUID from a full URL or use raw input
+      const match = val.match(/card\/([a-f0-9-]{36})/i);
+      const id = match ? match[1] : val;
+      window.location.href = `/card/${id}`;
+    });
+
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') goBtn.click(); });
+
+    function setMsg(text, type) {
+      msg.innerHTML = `<div class="alert alert-${type === 'error' ? 'error' : 'success'}">${text}</div>`;
+    }
+
+    // Show available cards if any exist
+    async function loadCards() {
+      try {
+        const res = await fetch('/api/cards');
+        const cards = await res.json();
+        if (cards.length > 0) {
+          const section = document.getElementById('card-links-section');
+          const list    = document.getElementById('card-links');
+          section.style.display = 'block';
+          list.innerHTML = cards.map(c =>
+            `<a href="${c.url}">Card #${c.number}</a>`
+          ).join('');
+        }
+      } catch (_) {}
+    }
+
+    loadCards();
+  </script>
+</body>
+</html>

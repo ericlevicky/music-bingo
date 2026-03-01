@@ -1,0 +1,50 @@
+# Render Blueprint — defines the Music Bingo web service.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# After connecting this repo in the Render dashboard, Render will read this
+# file and create the service automatically.  Environment variables marked
+# `sync: false` must be filled in manually in the Render dashboard
+# (they are intentionally NOT committed to this repo).
+
+services:
+  - type: web
+    name: music-bingo
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /health
+
+    envVars:
+      # Tell the app it is running in production (enables secure cookies, etc.)
+      - key: NODE_ENV
+        value: production
+
+      # Render assigns PORT automatically; the app reads process.env.PORT.
+      # Do NOT set PORT here — Render injects it at runtime.
+
+      # Session signing secret — Render auto-generates a secure random value.
+      - key: SESSION_SECRET
+        generateValue: true
+
+      # ── Spotify Developer App ─────────────────────────────────────────────
+      # Create your app at https://developer.spotify.com/dashboard
+      # Set the Redirect URI in the Spotify app to:
+      #   https://<your-app>.onrender.com/auth/spotify/callback
+      - key: SPOTIFY_CLIENT_ID
+        sync: false
+      - key: SPOTIFY_CLIENT_SECRET
+        sync: false
+      - key: SPOTIFY_REDIRECT_URI
+        sync: false
+
+      # ── Google OAuth App ──────────────────────────────────────────────────
+      # Create credentials at https://console.cloud.google.com/
+      # Enable the "Google People API" and add an Authorised Redirect URI:
+      #   https://<your-app>.onrender.com/auth/google/callback
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
