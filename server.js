@@ -45,6 +45,9 @@ const rateLimit = require('express-rate-limit');
 
 const { name: APP_NAME, version: APP_VERSION } = require('./package.json');
 
+const MemoryStore = require('memorystore');
+const MemStoreSession = MemoryStore(session);
+
 const passport  = require('./src/auth');
 const store     = require('./src/store');
 const { generateCards, validateBingo } = require('./src/bingo');
@@ -88,6 +91,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(
   session({
+    store: new MemStoreSession({
+      checkPeriod: 86_400_000,   // prune expired entries every 24 h
+      ttl: 7 * 24 * 60 * 60 * 1000,  // session TTL matches cookie maxAge (7 days)
+    }),
     secret: process.env.SESSION_SECRET || 'music-bingo-dev-secret',
     resave: false,
     saveUninitialized: false,
@@ -108,7 +115,8 @@ app.use(passport.session());
 /** Middleware: require an authenticated admin session. */
 function ensureAdmin(req, res, next) {
   if (req.isAuthenticated()) return next();
-  if (req.accepts('json') && !req.accepts('html')) {
+  // API routes always respond with JSON 401 regardless of Accept header
+  if (req.path.startsWith('/api/')) {
     return res.status(401).json({ error: 'Authentication required.' });
   }
   res.redirect('/login');
