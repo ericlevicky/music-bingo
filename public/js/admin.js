@@ -187,10 +187,24 @@ generateBtn.addEventListener('click', async () => {
 
 function renderCardList(cards) {
   cardListEl.innerHTML = cards.map(c => {
+    const fullUrl = window.location.origin + c.url;
+    let shareBtn = '';
+
+    if (c.contact && c.contact.type === 'phone') {
+      const raw   = c.contact.value.trim();
+      const phone = (raw.startsWith('+') ? '+' : '') + raw.replace(/\D/g, '');
+      const msg   = encodeURIComponent(`Your Music Bingo card is ready! Tap to play: ${fullUrl}`);
+      shareBtn = `<a href="sms:${escAttr(phone)}?body=${msg}" class="share-btn" title="Send text to ${escAttr(c.contact.value)}">💬</a>`;
+    } else if (c.contact && c.contact.type === 'email') {
+      const subject = encodeURIComponent('Your Music Bingo Card');
+      const body    = encodeURIComponent(`Hi,\n\nYour Music Bingo card is ready! Click the link below to play:\n\n${fullUrl}\n\nGood luck and have fun!`);
+      shareBtn = `<a href="mailto:${escAttr(c.contact.value)}?subject=${subject}&body=${body}" class="share-btn" title="Send email to ${escAttr(c.contact.value)}">✉️</a>`;
+    }
+
     const contactLabel = c.contact
       ? ` <span style="color:var(--text-m); font-size:.75rem;">(${escHtml(c.contact.value)})</span>`
       : '';
-    return `<a href="${escAttr(c.url)}" target="_blank">Card #${c.number}${contactLabel}</a>`;
+    return `<span class="card-list-item"><a href="${escAttr(c.url)}" target="_blank">Card #${c.number}${contactLabel}</a>${shareBtn}</span>`;
   }).join('');
   cardListSection.style.display = 'block';
 }

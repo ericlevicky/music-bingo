@@ -207,6 +207,7 @@ input:focus { border-color: var(--green); }
 
 /* ─── Card list (admin) ──────────────────────────────────────────────────── */
 .card-list { display: flex; flex-wrap: wrap; gap: .6rem; }
+.card-list-item { display: inline-flex; align-items: center; gap: .3rem; }
 .card-list a {
   background: var(--surface2);
   border-radius: 50px;
@@ -217,6 +218,18 @@ input:focus { border-color: var(--green); }
   transition: background var(--trans), color var(--trans);
 }
 .card-list a:hover { background: var(--green); color: #000; text-decoration: none; }
+.card-list .share-btn {
+  padding: .3rem;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: .85rem;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-list .share-btn:hover { background: #444; color: var(--text); }
 
 /* ─── Winners table ──────────────────────────────────────────────────────── */
 table { width: 100%; border-collapse: collapse; font-size: .9rem; }
