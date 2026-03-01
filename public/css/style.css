@@ -179,6 +179,7 @@ input:focus { border-color: var(--green); }
   border: 2px solid transparent;
   transition: background var(--trans), border-color var(--trans), transform var(--trans);
   user-select: none;
+  touch-action: manipulation;
   overflow: hidden;
 }
 .bingo-cell:hover:not(.free) { background: #333; transform: scale(1.03); }
