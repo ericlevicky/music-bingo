@@ -1,4 +1,4 @@
-name: Deploy to Render
+name: Deploy to Fly.io
 
 on:
   # Trigger when a PR is closed and merged to main
@@ -36,7 +36,9 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Deploy to Render
-        run: |
-          curl -fsSX POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-          echo "Deployment triggered on Render."
+      - name: Deploy to Fly.io
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
