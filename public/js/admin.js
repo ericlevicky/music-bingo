@@ -41,7 +41,7 @@ let currentAdminId = null;
 async function loadProfile() {
   try {
     const res  = await fetch('/api/admin/profile');
-    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (res.status === 401 || res.redirected) { window.location.href = '/login'; return; }
     const data = await res.json();
 
     currentAdminId = data.googleId;
