@@ -22,11 +22,12 @@ const SCOPES = [
 /** One minute buffer before token expiry triggers a refresh. */
 const TOKEN_REFRESH_BUFFER_MS = 60_000;
 
-function _makeApi() {
+function _makeApi(redirectUri) {
   return new SpotifyWebApi({
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
     redirectUri:
+      redirectUri ||
       process.env.SPOTIFY_REDIRECT_URI ||
       'http://localhost:3000/auth/spotify/callback',
   });
@@ -50,19 +51,21 @@ function extractPlaylistId(input) {
 /**
  * Build the Spotify OAuth authorise URL.
  * @param {string} state  CSRF token.
+ * @param {string} [redirectUri]  Explicit redirect URI (overrides env/default).
  * @returns {string}
  */
-function buildAuthUrl(state) {
-  return _makeApi().createAuthorizeURL(SCOPES, state);
+function buildAuthUrl(state, redirectUri) {
+  return _makeApi(redirectUri).createAuthorizeURL(SCOPES, state);
 }
 
 /**
  * Exchange an authorisation code for access + refresh tokens.
  * @param {string} code
+ * @param {string} [redirectUri]  Must exactly match the URI used to build the auth URL.
  * @returns {Promise<{ accessToken, refreshToken, expiresAt }>}
  */
-async function exchangeCode(code) {
-  const api = _makeApi();
+async function exchangeCode(code, redirectUri) {
+  const api = _makeApi(redirectUri);
   const data = await api.authorizationCodeGrant(code);
   return {
     accessToken: data.body.access_token,

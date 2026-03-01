@@ -178,8 +178,13 @@ app.get('/auth/logout', strictLimiter, (req, res, next) => {
 
 app.get('/auth/spotify', strictLimiter, ensureAdmin, (req, res) => {
   const state = crypto.randomBytes(16).toString('hex');
+  // Build the redirect URI from the live request so it always matches exactly
+  // what the user must register in the Spotify Developer Dashboard.
+  // With `trust proxy: 1`, req.protocol correctly returns 'https' on Render.
+  const redirectUri = `${req.protocol}://${req.get('host')}/auth/spotify/callback`;
   req.session.spotifyState = state;
-  res.redirect(buildAuthUrl(state));
+  req.session.spotifyRedirectUri = redirectUri;
+  res.redirect(buildAuthUrl(state, redirectUri));
 });
 
 app.get('/auth/spotify/callback', strictLimiter, ensureAdmin, async (req, res) => {
@@ -192,8 +197,18 @@ app.get('/auth/spotify/callback', strictLimiter, ensureAdmin, async (req, res) =
     return res.redirect('/admin?spotify_error=state_mismatch');
   }
 
+  // Retrieve the redirect URI saved when the flow was initiated, then clear
+  // both values from the session so the code cannot be replayed.
+  // Fall back to computing the URI from the request if the session value is
+  // missing (e.g. direct navigation to the callback URL).
+  const redirectUri =
+    req.session.spotifyRedirectUri ||
+    `${req.protocol}://${req.get('host')}/auth/spotify/callback`;
+  delete req.session.spotifyState;
+  delete req.session.spotifyRedirectUri;
+
   try {
-    const tokens = await exchangeCode(code);
+    const tokens = await exchangeCode(code, redirectUri);
     req.user.setSpotifyTokens(tokens);
     res.redirect('/admin?spotify_success=1');
   } catch (err) {
