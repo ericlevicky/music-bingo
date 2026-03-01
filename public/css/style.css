@@ -1,0 +1,293 @@
+/* ─── Reset & base ───────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green:   #1db954;
+  --green-d: #17a348;
+  --dark:    #121212;
+  --surface: #1e1e1e;
+  --surface2:#2a2a2a;
+  --text:    #ffffff;
+  --text-m:  #b3b3b3;
+  --red:     #e3342f;
+  --gold:    #f6c90e;
+  --radius:  10px;
+  --trans:   0.2s ease;
+}
+
+html { font-size: 16px; }
+body {
+  font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--dark);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+a { color: var(--green); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ─── Layout helpers ─────────────────────────────────────────────────────── */
+.container { max-width: 960px; margin: 0 auto; padding: 0 1.25rem; }
+.card      { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; }
+.section   { margin-bottom: 1.75rem; }
+
+/* ─── Navbar ─────────────────────────────────────────────────────────────── */
+nav {
+  background: #000;
+  padding: .85rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+nav .logo {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: .5px;
+}
+nav a { color: var(--text-m); font-size: .9rem; }
+nav a:hover { color: var(--text); text-decoration: none; }
+
+/* ─── Typography ─────────────────────────────────────────────────────────── */
+h1 { font-size: 2rem; font-weight: 700; margin-bottom: .5rem; }
+h2 { font-size: 1.4rem; font-weight: 600; margin-bottom: .75rem; }
+h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: .5rem; }
+p  { line-height: 1.6; color: var(--text-m); }
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .6rem 1.25rem;
+  border: none;
+  border-radius: 50px;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--trans), transform var(--trans);
+}
+.btn:active { transform: scale(.97); }
+.btn-green  { background: var(--green); color: #000; }
+.btn-green:hover { background: var(--green-d); }
+.btn-red    { background: var(--red); color: #fff; }
+.btn-red:hover   { background: #c0392b; }
+.btn-grey   { background: var(--surface2); color: var(--text); }
+.btn-grey:hover  { background: #333; }
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--green);
+  color: var(--green);
+}
+.btn-outline:hover { background: var(--green); color: #000; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ─── Forms ──────────────────────────────────────────────────────────────── */
+label  { display: block; font-size: .85rem; color: var(--text-m); margin-bottom: .35rem; }
+input[type="text"],
+input[type="number"],
+input[type="url"] {
+  width: 100%;
+  padding: .6rem .85rem;
+  background: var(--surface2);
+  border: 1.5px solid #444;
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: .95rem;
+  outline: none;
+  transition: border-color var(--trans);
+}
+input:focus { border-color: var(--green); }
+
+.form-row   { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
+.form-group { flex: 1; min-width: 180px; }
+
+/* ─── Alerts / status messages ───────────────────────────────────────────── */
+.alert {
+  padding: .65rem 1rem;
+  border-radius: var(--radius);
+  font-size: .9rem;
+  margin-bottom: 1rem;
+}
+.alert-error   { background: rgba(227,52,47,.2); border: 1px solid var(--red);  color: #ff6b6b; }
+.alert-success { background: rgba(29,185,84,.15); border: 1px solid var(--green); color: var(--green); }
+.alert-info    { background: rgba(255,255,255,.05); border: 1px solid #444; color: var(--text-m); }
+
+/* ─── Now-playing banner ─────────────────────────────────────────────────── */
+#now-playing {
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+#now-playing img {
+  width: 56px; height: 56px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+#now-playing .np-info .np-title { font-weight: 700; font-size: 1rem; }
+#now-playing .np-info .np-artist { font-size: .85rem; color: var(--text-m); }
+.pulse-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: .25rem;
+  animation: pulse 1.2s ease infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+
+/* ─── Bingo grid ─────────────────────────────────────────────────────────── */
+.bingo-header {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.bingo-header span {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: .1em;
+  color: var(--green);
+}
+
+.bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.bingo-cell {
+  aspect-ratio: 1;
+  background: var(--surface2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: .35rem;
+  cursor: pointer;
+  font-size: .68rem;
+  line-height: 1.25;
+  border: 2px solid transparent;
+  transition: background var(--trans), border-color var(--trans), transform var(--trans);
+  user-select: none;
+  overflow: hidden;
+}
+.bingo-cell:hover:not(.free) { background: #333; transform: scale(1.03); }
+.bingo-cell.free {
+  background: rgba(29,185,84,.18);
+  border-color: var(--green);
+  cursor: default;
+  color: var(--green);
+  font-weight: 700;
+  font-size: .85rem;
+}
+.bingo-cell.played {
+  border-color: rgba(29,185,84,.5);
+  background: rgba(29,185,84,.07);
+}
+.bingo-cell.marked {
+  background: var(--green) !important;
+  border-color: var(--green-d) !important;
+  color: #000 !important;
+  font-weight: 700;
+}
+.bingo-cell .cell-title  { font-weight: 600; margin-bottom: 1px; }
+.bingo-cell .cell-artist { color: var(--text-m); font-size: .6rem; }
+.bingo-cell.marked .cell-artist { color: rgba(0,0,0,.7); }
+
+/* ─── Card list (admin) ──────────────────────────────────────────────────── */
+.card-list { display: flex; flex-wrap: wrap; gap: .6rem; }
+.card-list a {
+  background: var(--surface2);
+  border-radius: 50px;
+  padding: .35rem .85rem;
+  font-size: .85rem;
+  color: var(--text-m);
+  border: 1px solid #444;
+  transition: background var(--trans), color var(--trans);
+}
+.card-list a:hover { background: var(--green); color: #000; text-decoration: none; }
+
+/* ─── Winners table ──────────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th    { text-align: left; padding: .5rem .75rem; color: var(--text-m); border-bottom: 1px solid #333; }
+td    { padding: .6rem .75rem; border-bottom: 1px solid #2a2a2a; }
+tr:first-child td { color: var(--gold); font-weight: 700; }
+.rank-badge {
+  display: inline-block;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--surface2);
+  text-align: center;
+  line-height: 26px;
+  font-size: .8rem;
+  font-weight: 700;
+}
+.rank-badge.first { background: var(--gold); color: #000; }
+
+/* ─── Status pill ────────────────────────────────────────────────────────── */
+.status-pill {
+  display: inline-block;
+  padding: .25rem .75rem;
+  border-radius: 50px;
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.status-idle   { background: rgba(255,255,255,.1); color: var(--text-m); }
+.status-active { background: rgba(29,185,84,.2);  color: var(--green); }
+.status-ended  { background: rgba(227,52,47,.2);  color: var(--red); }
+
+/* ─── BINGO button ───────────────────────────────────────────────────────── */
+#bingo-btn {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: .15em;
+  padding: .8rem 2.5rem;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  background: var(--gold);
+  color: #000;
+  transition: transform var(--trans), box-shadow var(--trans);
+  display: block;
+  margin: 1.25rem auto;
+  animation: glow 2s ease infinite;
+}
+#bingo-btn:hover { transform: scale(1.06); }
+#bingo-btn:disabled { background: #555; color: #888; animation: none; cursor: not-allowed; }
+@keyframes glow {
+  0%,100% { box-shadow: 0 0 8px rgba(246,201,14,.4); }
+  50%      { box-shadow: 0 0 24px rgba(246,201,14,.9); }
+}
+
+/* ─── Splash / landing ───────────────────────────────────────────────────── */
+.splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  text-align: center;
+  gap: 1.5rem;
+}
+.splash h1 { font-size: 3rem; }
+.splash .emoji { font-size: 4rem; display: block; }
+
+/* ─── Responsive tweaks ──────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .bingo-cell { font-size: .55rem; padding: .2rem; }
+  h1 { font-size: 1.5rem; }
+  .splash h1 { font-size: 2rem; }
+  #bingo-btn { font-size: 1.1rem; }
+}

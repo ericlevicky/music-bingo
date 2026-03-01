@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – Music Bingo</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <nav>
+    <span class="logo">🎵 Music Bingo</span>
+    <a href="/">Player page</a>
+  </nav>
+
+  <div class="container" style="padding-top:1.5rem; padding-bottom:3rem;">
+    <h1>Admin Dashboard</h1>
+
+    <!-- Status bar -->
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.75rem;">
+      <span>Game status:</span>
+      <span id="game-status" class="status-pill status-idle">Idle</span>
+      <span id="spotify-badge" style="font-size:.85rem;"></span>
+    </div>
+
+    <div id="global-alert"></div>
+
+    <!-- ── Step 1: Spotify auth ─────────────────────────────────── -->
+    <div class="section card" id="spotify-section">
+      <h2>1 · Connect Spotify</h2>
+      <p style="margin-bottom:1rem;">
+        Authorise this app to read which song is currently playing on your Spotify account.
+      </p>
+      <div id="spotify-status-msg"></div>
+      <a href="/auth/login" class="btn btn-green" id="spotify-btn">
+        🎧 Connect with Spotify
+      </a>
+    </div>
+
+    <!-- ── Step 2: Generate cards ───────────────────────────────── -->
+    <div class="section card">
+      <h2>2 · Generate Bingo Cards</h2>
+      <div class="form-row" style="margin-bottom:1rem;">
+        <div class="form-group">
+          <label for="playlist-url">Spotify Playlist URL or ID</label>
+          <input type="url" id="playlist-url"
+                 placeholder="https://open.spotify.com/playlist/…" />
+        </div>
+        <div class="form-group" style="max-width:130px;">
+          <label for="card-count">Number of cards</label>
+          <input type="number" id="card-count" value="10" min="1" max="500" />
+        </div>
+        <button class="btn btn-green" id="generate-btn">Generate cards</button>
+      </div>
+      <div id="generate-msg"></div>
+      <div id="card-list-section" style="display:none;">
+        <p style="margin-bottom:.75rem;">Share these links with your players:</p>
+        <div id="card-list" class="card-list"></div>
+      </div>
+    </div>
+
+    <!-- ── Step 3: Game control ─────────────────────────────────── -->
+    <div class="section card">
+      <h2>3 · Game Control</h2>
+
+      <!-- Now playing -->
+      <div id="now-playing" style="display:none;">
+        <img id="np-art" src="" alt="album art" />
+        <div class="np-info">
+          <div class="np-title">
+            <span class="pulse-dot"></span>
+            <span id="np-title">—</span>
+          </div>
+          <div class="np-artist" id="np-artist"></div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:.75rem; flex-wrap:wrap;">
+        <button class="btn btn-green" id="start-btn">▶ Start Game</button>
+        <button class="btn btn-red"   id="end-btn"   disabled>⏹ End Game</button>
+        <button class="btn btn-grey"  id="reset-btn">↺ Reset</button>
+      </div>
+      <div id="game-msg" style="margin-top:.85rem;"></div>
+    </div>
+
+    <!-- ── Step 4: Played songs & winners ──────────────────────── -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; flex-wrap:wrap;">
+      <div class="section card">
+        <h2>Played Songs</h2>
+        <div id="played-songs">
+          <p id="no-songs-msg">No songs played yet.</p>
+          <ol id="played-list" style="padding-left:1.25rem; line-height:1.8;"></ol>
+        </div>
+      </div>
+
+      <div class="section card">
+        <h2>🏆 Winners</h2>
+        <div id="winners-section">
+          <p id="no-winners-msg">No winners yet.</p>
+          <table id="winners-table" style="display:none;">
+            <thead><tr><th>Rank</th><th>Player</th><th>Card</th><th>Time</th></tr></thead>
+            <tbody id="winners-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>
