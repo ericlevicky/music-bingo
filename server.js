@@ -77,6 +77,12 @@ const strictLimiter = rateLimit({
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
+// Render (and most PaaS hosts) terminate TLS at a reverse proxy and forward
+// plain HTTP to Node.js.  Without this, express-session sees HTTP and silently
+// suppresses the Set-Cookie header for cookies marked `secure: true`, so the
+// session is never stored in the browser and every request appears unauthenticated.
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
