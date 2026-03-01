@@ -43,6 +43,8 @@ const session = require('express-session');
 const { Server: SocketServer } = require('socket.io');
 const rateLimit = require('express-rate-limit');
 
+const { name: APP_NAME, version: APP_VERSION } = require('./package.json');
+
 const passport  = require('./src/auth');
 const store     = require('./src/store');
 const { generateCards, validateBingo } = require('./src/bingo');
@@ -134,7 +136,7 @@ app.get('/card/:id', generalLimiter, (req, res) =>
 
 // ─── Health check (used by Render to verify the service is alive) ─────────────
 
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', name: APP_NAME, version: APP_VERSION }));
 
 // ─── Google OAuth ─────────────────────────────────────────────────────────────
 
