@@ -132,6 +132,10 @@ app.get('/card/:id', generalLimiter, (req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'card.html'))
 );
 
+// ─── Health check (used by Render to verify the service is alive) ─────────────
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
 // ─── Google OAuth ─────────────────────────────────────────────────────────────
 
 app.get(

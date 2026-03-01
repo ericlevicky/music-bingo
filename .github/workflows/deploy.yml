@@ -1,0 +1,42 @@
+name: Deploy to Render
+
+on:
+  # Trigger when a PR is closed and merged to main
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+  # Also allow manual deployment
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    # Only run if the PR was merged (not just closed)
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Deploy to Render
+        run: |
+          curl -fsSX POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          echo "Deployment triggered on Render."
