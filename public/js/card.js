@@ -23,9 +23,7 @@ const playedList   = document.getElementById('played-list');
 const noSongsLi    = document.getElementById('no-songs-li');
 const markedCount  = document.getElementById('marked-count');
 const globalAlert  = document.getElementById('global-alert');
-
-/** Number of columns/rows in the bingo grid. */
-const GRID_SIZE = 5;
+const songsHistory = document.getElementById('songs-history');
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const cardId = window.location.pathname.split('/').pop();
@@ -121,7 +119,6 @@ function renderGrid() {
           <span class="cell-title">${escHtml(cell.song.name)}</span>
           <span class="cell-artist">${escHtml(cell.song.artists)}</span>
         `;
-        if (playedSongIds.has(cell.song.id)) div.classList.add('played');
         if (markedCells.has(`${r},${c}`))   div.classList.add('marked');
 
         div.addEventListener('click', () => toggleCell(div, r, c, cell));
@@ -153,19 +150,6 @@ function updateMarkedCount() {
   markedCount.textContent = `${total} / 25 marked`;
 }
 
-function highlightPlayed(songId) {
-  if (!card) return;
-  card.grid.forEach((row, r) => {
-    row.forEach((cell, c) => {
-      if (!cell.isFree && cell.song && cell.song.id === songId) {
-        const idx = r * GRID_SIZE + c;
-        const div = bingoGrid.children[idx];
-        if (div) div.classList.add('played');
-      }
-    });
-  });
-}
-
 // ─── Game status ──────────────────────────────────────────────────────────────
 function updateGameStatus(status) {
   gameStatus = status;
@@ -183,7 +167,6 @@ function addPlayedSong(song) {
   const li = document.createElement('li');
   li.textContent = `${song.name} – ${song.artists}`;
   playedList.appendChild(li);
-  highlightPlayed(song.id);
 }
 
 // ─── BINGO claim ──────────────────────────────────────────────────────────────
@@ -238,7 +221,10 @@ socket.on('game:state', (state) => {
     if (card) renderGrid();
   }
 
-  if (state.currentSong) showNowPlaying(state.currentSong);
+  if (state.currentSong) {
+    showNowPlaying(state.currentSong);
+    if (songsHistory) songsHistory.style.display = 'none';
+  }
 });
 
 socket.on('game:started', () => {
@@ -256,10 +242,12 @@ socket.on('game:reset',  () => { updateGameStatus('idle'); });
 socket.on('song:playing', (song) => {
   showNowPlaying(song);
   addPlayedSong(song);
+  if (songsHistory) songsHistory.style.display = 'none';
 });
 
 socket.on('song:paused', () => {
   nowPlaying.style.display = 'none';
+  if (songsHistory) songsHistory.style.display = '';
 });
 
 socket.on('bingo:claimed', (w) => {

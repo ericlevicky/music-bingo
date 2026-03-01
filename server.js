@@ -427,6 +427,10 @@ io.on('connection', (socket) => {
   socket.on('player:join', ({ gameId } = {}) => {
     if (!gameId) return;
     socket.join(`game:${gameId}`);
+    const admin = store.findAdminByGameId(gameId);
+    if (admin) {
+      socket.emit('game:state', admin.game.toJSON());
+    }
   });
 });
 

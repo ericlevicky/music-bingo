@@ -97,6 +97,18 @@ class AdminStore {
   }
 
   /**
+   * Find the admin whose active game matches the given gameId.
+   * @param {string} gameId
+   * @returns {AdminData|null}
+   */
+  findAdminByGameId(gameId) {
+    for (const admin of this._admins.values()) {
+      if (admin.game && admin.game.gameId === gameId) return admin;
+    }
+    return null;
+  }
+
+  /**
    * Find a card by ID across all admins.
    * @param {string} cardId
    * @returns {{ admin: AdminData, card: Object }|null}
