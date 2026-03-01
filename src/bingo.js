@@ -28,11 +28,12 @@ function shuffle(arr) {
 
 /**
  * Build a single 5×5 bingo card from a pool of songs.
- * @param {Array<Object>} songs  Full song list (≥ 24 items).
- * @param {number}        number Human-readable card number (1-based).
+ * @param {Array<Object>} songs   Full song list (≥ 24 items).
+ * @param {number}        number  Human-readable card number (1-based).
+ * @param {{ type: string, value: string }|null} contact  Assigned contact (email or phone) or null.
  * @returns {Object}  Card object.
  */
-function generateCard(songs, number) {
+function generateCard(songs, number, contact = null) {
   if (songs.length < 24) {
     throw new Error('Playlist must contain at least 24 songs to generate a bingo card.');
   }
@@ -60,26 +61,72 @@ function generateCard(songs, number) {
   return {
     id: uuidv4(),
     number,
+    contact,  // { type: 'email'|'phone'|'other', value: string } | null
     grid,
     createdAt: new Date().toISOString(),
   };
 }
 
 /**
- * Generate `count` bingo cards from a song pool.
+ * Generate bingo cards.
+ *
+ * Two calling conventions:
+ *   generateCards(songs, count)            → `count` cards with no contact assigned.
+ *   generateCards(songs, contacts)         → one or more cards per contact entry.
+ *
+ * `contacts` is an array of `{ value: string, count?: number }` objects where
+ * `value` is an email address or phone number and `count` defaults to 1.
+ *
  * @param {Array<Object>} songs
- * @param {number}        count  Number of cards to generate.
+ * @param {number|Array<{ value: string, count?: number }>} countOrContacts
  * @returns {Array<Object>}
  */
-function generateCards(songs, count) {
-  if (!Number.isInteger(count) || count < 1) {
-    throw new Error('count must be a positive integer.');
+function generateCards(songs, countOrContacts) {
+  if (typeof countOrContacts === 'number') {
+    const count = countOrContacts;
+    if (!Number.isInteger(count) || count < 1) {
+      throw new Error('count must be a positive integer.');
+    }
+    return Array.from({ length: count }, (_, i) =>
+      generateCard(songs, i + 1, null)
+    );
   }
+
+  if (!Array.isArray(countOrContacts) || countOrContacts.length === 0) {
+    throw new Error('contacts must be a non-empty array.');
+  }
+
   const cards = [];
-  for (let i = 0; i < count; i++) {
-    cards.push(generateCard(songs, i + 1));
+  let cardNumber = 1;
+
+  for (const entry of countOrContacts) {
+    const perContact = entry.count && Number.isInteger(entry.count) && entry.count > 0
+      ? entry.count
+      : 1;
+    const contact = { type: detectContactType(entry.value), value: entry.value };
+
+    for (let i = 0; i < perContact; i++) {
+      cards.push(generateCard(songs, cardNumber++, contact));
+    }
   }
+
   return cards;
+}
+
+/**
+ * Detect whether a string looks like an email address, phone number, or other.
+ * Phone numbers must contain at least 7 digits and may include +, spaces, dashes,
+ * dots, and parentheses (common international formats).
+ * @param {string} value
+ * @returns {'email'|'phone'|'other'}
+ */
+function detectContactType(value) {
+  if (!value || typeof value !== 'string') return 'other';
+  const trimmed = value.trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return 'email';
+  // Must have at least 7 digits and only contain valid phone characters
+  if (/^[+\d][\d\s\-().]{5,19}$/.test(trimmed) && (trimmed.match(/\d/g) || []).length >= 7) return 'phone';
+  return 'other';
 }
 
 // ─── Bingo validation ────────────────────────────────────────────────────────
@@ -147,4 +194,4 @@ function validateBingo(grid, playedSongIds, markedCells) {
   return { isValid: false, pattern: null };
 }
 
-module.exports = { generateCard, generateCards, validateBingo, shuffle };
+module.exports = { generateCard, generateCards, validateBingo, shuffle, detectContactType };

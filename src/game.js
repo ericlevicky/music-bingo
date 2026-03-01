@@ -1,5 +1,7 @@
 /**
- * game.js – In-memory singleton that holds all game state.
+ * game.js – GameState class (one instance per admin).
+ *
+ * Exported as a class so each admin gets their own instance via the store.
  *
  * State lifecycle:
  *   idle  →  (generate cards)  →  active  →  ended  →  idle (reset)
@@ -7,12 +9,17 @@
 
 'use strict';
 
+const { v4: uuidv4 } = require('uuid');
+
 class GameState {
   constructor() {
     this._reset();
   }
 
   _reset() {
+    /** Opaque room ID shared by admin + all players of this game. */
+    this.gameId = null;
+
     /** @type {'idle'|'active'|'ended'} */
     this.status = 'idle';
 
@@ -56,6 +63,7 @@ class GameState {
   // ─── Card management ──────────────────────────────────────────────────────
 
   setCards(cards, playlistSongs, playlistId) {
+    this.gameId = uuidv4(); // new room per card set
     this.cards = cards;
     this.playlistSongs = playlistSongs;
     this.playlistId = playlistId;
@@ -120,6 +128,7 @@ class GameState {
 
   toJSON() {
     return {
+      gameId: this.gameId,
       status: this.status,
       cardCount: this.cards.length,
       playlistId: this.playlistId,
@@ -132,4 +141,4 @@ class GameState {
   }
 }
 
-module.exports = new GameState();
+module.exports = GameState;

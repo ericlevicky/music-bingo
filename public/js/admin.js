@@ -4,99 +4,159 @@
 const socket = io();
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
-const gameStatusEl  = document.getElementById('game-status');
-const spotifyBadge  = document.getElementById('spotify-badge');
-const spotifyBtn    = document.getElementById('spotify-btn');
-const spotifyMsg    = document.getElementById('spotify-status-msg');
-const playlistInput = document.getElementById('playlist-url');
-const cardCountInput= document.getElementById('card-count');
-const generateBtn   = document.getElementById('generate-btn');
-const generateMsg   = document.getElementById('generate-msg');
-const cardListSection = document.getElementById('card-list-section');
-const cardListEl    = document.getElementById('card-list');
-const startBtn      = document.getElementById('start-btn');
-const endBtn        = document.getElementById('end-btn');
-const resetBtn      = document.getElementById('reset-btn');
-const gameMsg       = document.getElementById('game-msg');
-const nowPlaying    = document.getElementById('now-playing');
-const npArt         = document.getElementById('np-art');
-const npTitle       = document.getElementById('np-title');
-const npArtist      = document.getElementById('np-artist');
-const playedList    = document.getElementById('played-list');
-const noSongsMsg    = document.getElementById('no-songs-msg');
-const winnersTable  = document.getElementById('winners-table');
-const winnersBody   = document.getElementById('winners-body');
-const noWinnersMsg  = document.getElementById('no-winners-msg');
-const globalAlert   = document.getElementById('global-alert');
+const gameStatusEl      = document.getElementById('game-status');
+const spotifyBadge      = document.getElementById('spotify-badge');
+const spotifyBtn        = document.getElementById('spotify-btn');
+const spotifyMsg        = document.getElementById('spotify-status-msg');
+const playlistSelect    = document.getElementById('playlist-select');
+const refreshBtn        = document.getElementById('refresh-playlists-btn');
+const playlistInfo      = document.getElementById('playlist-info');
+const contactsInput     = document.getElementById('contacts-input');
+const cardsPerContact   = document.getElementById('cards-per-contact');
+const totalCardsPreview = document.getElementById('total-cards-preview');
+const generateBtn       = document.getElementById('generate-btn');
+const generateMsg       = document.getElementById('generate-msg');
+const cardListSection   = document.getElementById('card-list-section');
+const cardListEl        = document.getElementById('card-list');
+const startBtn          = document.getElementById('start-btn');
+const endBtn            = document.getElementById('end-btn');
+const resetBtn          = document.getElementById('reset-btn');
+const gameMsg           = document.getElementById('game-msg');
+const nowPlaying        = document.getElementById('now-playing');
+const npArt             = document.getElementById('np-art');
+const npTitle           = document.getElementById('np-title');
+const npArtist          = document.getElementById('np-artist');
+const playedList        = document.getElementById('played-list');
+const noSongsMsg        = document.getElementById('no-songs-msg');
+const winnersTable      = document.getElementById('winners-table');
+const winnersBody       = document.getElementById('winners-body');
+const noWinnersMsg      = document.getElementById('no-winners-msg');
+const globalAlert       = document.getElementById('global-alert');
+const adminPic          = document.getElementById('admin-pic');
+const adminName         = document.getElementById('admin-name');
+
+// ─── Admin profile ────────────────────────────────────────────────────────────
+let currentAdminId = null;
+
+async function loadProfile() {
+  try {
+    const res  = await fetch('/api/admin/profile');
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    const data = await res.json();
+
+    currentAdminId = data.googleId;
+    adminName.textContent = data.name || data.email;
+    if (data.picture) {
+      adminPic.src = data.picture;
+      adminPic.style.display = '';
+    }
+
+    updateSpotifyBadge(data.spotifyConnected);
+    updateGameStatus(data.game.status);
+
+    // Restore state from existing game
+    if (data.game.playedSongs && data.game.playedSongs.length) {
+      data.game.playedSongs.forEach(addPlayedSong);
+    }
+    if (data.game.winners && data.game.winners.length) {
+      data.game.winners.forEach((w, i) => addWinnerRow(w, i + 1));
+    }
+    if (data.game.cardCount > 0) {
+      const cardsRes = await fetch('/api/cards');
+      renderCardList(await cardsRes.json());
+    }
+
+    // Load playlists if Spotify is connected
+    if (data.spotifyConnected) loadPlaylists();
+
+    // Join the admin's game room
+    if (data.game.gameId) {
+      socket.emit('admin:join', { googleId: currentAdminId });
+    }
+  } catch (err) {
+    setAlert(globalAlert, 'Failed to load profile: ' + err.message, 'error');
+  }
+}
 
 // ─── Auth feedback from URL params ────────────────────────────────────────────
 const params = new URLSearchParams(window.location.search);
-if (params.get('auth_success')) {
-  spotifyMsg.innerHTML = `<div class="alert alert-success">✓ Spotify connected successfully!</div>`;
+if (params.get('spotify_success')) {
+  spotifyMsg.innerHTML = `<div class="alert alert-success">✓ Spotify connected!</div>`;
   history.replaceState({}, '', '/admin');
 }
-if (params.get('auth_error')) {
-  spotifyMsg.innerHTML = `<div class="alert alert-error">Spotify error: ${params.get('auth_error')}</div>`;
+if (params.get('spotify_error')) {
+  spotifyMsg.innerHTML = `<div class="alert alert-error">Spotify error: ${params.get('spotify_error')}</div>`;
   history.replaceState({}, '', '/admin');
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function setAlert(el, msg, type) {
-  if (!msg) { el.innerHTML = ''; return; }
-  el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-}
-
-function updateGameStatus(status) {
-  const labels = { idle: 'Idle', active: '● Active', ended: 'Ended' };
-  const classes = { idle: 'status-idle', active: 'status-active', ended: 'status-ended' };
-  gameStatusEl.textContent = labels[status] || status;
-  gameStatusEl.className   = `status-pill ${classes[status] || 'status-idle'}`;
-
-  startBtn.disabled = status !== 'idle' && status !== 'ended';
-  endBtn.disabled   = status !== 'active';
-}
-
-function addWinnerRow(w, rank) {
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><span class="rank-badge ${rank === 1 ? 'first' : ''}">${rank}</span></td>
-    <td>${escHtml(w.playerName)}</td>
-    <td>Card #${w.cardNumber}</td>
-    <td>${new Date(w.claimedAt).toLocaleTimeString()}</td>
-  `;
-  // Keep sorted
-  const rows = winnersBody.querySelectorAll('tr');
-  if (rows.length === 0 || rank > rows.length) {
-    winnersBody.appendChild(tr);
+// ─── Spotify badge ────────────────────────────────────────────────────────────
+function updateSpotifyBadge(connected) {
+  if (connected) {
+    spotifyBadge.innerHTML = '<span style="color:var(--green);">✓ Spotify connected</span>';
+    spotifyBtn.textContent = '✓ Reconnect Spotify';
   } else {
-    winnersBody.insertBefore(tr, rows[rank - 1]);
+    spotifyBadge.innerHTML = '<span style="color:var(--text-m);">Spotify not connected</span>';
   }
-  winnersTable.style.display = 'table';
-  noWinnersMsg.style.display = 'none';
 }
 
-function addPlayedSong(song) {
-  noSongsMsg.style.display = 'none';
-  const li = document.createElement('li');
-  li.textContent = `${song.name} – ${song.artists}`;
-  playedList.appendChild(li);
+// ─── Playlist picker ──────────────────────────────────────────────────────────
+async function loadPlaylists() {
+  refreshBtn.disabled = true;
+  try {
+    const res  = await fetch('/api/admin/playlists');
+    if (!res.ok) {
+      const d = await res.json();
+      setAlert(generateMsg, d.error, 'error');
+      return;
+    }
+    const playlists = await res.json();
+    playlistSelect.innerHTML = playlists.length === 0
+      ? '<option value="">No playlists found on your Spotify account</option>'
+      : '<option value="">— Select a playlist —</option>' +
+        playlists.map(p =>
+          `<option value="${escAttr(p.id)}">${escHtml(p.name)} (${p.trackCount} tracks)</option>`
+        ).join('');
+  } catch (err) {
+    setAlert(generateMsg, 'Failed to load playlists: ' + err.message, 'error');
+  } finally {
+    refreshBtn.disabled = false;
+  }
 }
 
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+refreshBtn.addEventListener('click', loadPlaylists);
+
+playlistSelect.addEventListener('change', () => {
+  const opt = playlistSelect.options[playlistSelect.selectedIndex];
+  if (!opt || !opt.value) { playlistInfo.textContent = ''; return; }
+  playlistInfo.textContent = `Selected: "${opt.text}"`;
+});
+
+// ─── Contacts / total cards preview ──────────────────────────────────────────
+function parseContacts() {
+  const lines            = contactsInput.value.split('\n').map(l => l.trim()).filter(Boolean);
+  const countPerContact  = parseInt(cardsPerContact.value, 10) || 1;
+  return lines.map(v => ({ value: v, count: countPerContact }));
 }
+
+function updatePreview() {
+  const contacts = parseContacts();
+  const total    = contacts.reduce((s, c) => s + c.count, 0);
+  totalCardsPreview.textContent = `${total} card${total !== 1 ? 's' : ''} total`;
+}
+
+contactsInput.addEventListener('input', updatePreview);
+cardsPerContact.addEventListener('input', updatePreview);
 
 // ─── Generate cards ───────────────────────────────────────────────────────────
 generateBtn.addEventListener('click', async () => {
-  const playlistUrl = playlistInput.value.trim();
-  const count       = parseInt(cardCountInput.value, 10);
+  const playlistId = playlistSelect.value;
+  if (!playlistId) { setAlert(generateMsg, 'Please select a playlist.', 'error'); return; }
 
-  if (!playlistUrl) { setAlert(generateMsg, 'Please enter a playlist URL.', 'error'); return; }
-  if (!count || count < 1) { setAlert(generateMsg, 'Enter a valid card count (≥ 1).', 'error'); return; }
+  const contacts = parseContacts();
+  if (contacts.length === 0) {
+    setAlert(generateMsg, 'Please enter at least one contact (email or phone).', 'error');
+    return;
+  }
 
   generateBtn.disabled = true;
   generateBtn.textContent = 'Generating…';
@@ -106,7 +166,7 @@ generateBtn.addEventListener('click', async () => {
     const res  = await fetch('/api/generate', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ playlistUrl, count }),
+      body:    JSON.stringify({ playlistId, contacts }),
     });
     const data = await res.json();
 
@@ -114,6 +174,9 @@ generateBtn.addEventListener('click', async () => {
 
     setAlert(generateMsg, `✓ ${data.message} (${data.songCount} songs in playlist)`, 'success');
     renderCardList(data.cards);
+
+    // Join the new game room
+    socket.emit('admin:join', { googleId: currentAdminId });
   } catch (err) {
     setAlert(generateMsg, 'Network error: ' + err.message, 'error');
   } finally {
@@ -123,9 +186,12 @@ generateBtn.addEventListener('click', async () => {
 });
 
 function renderCardList(cards) {
-  cardListEl.innerHTML = cards.map(c =>
-    `<a href="${c.url}" target="_blank">Card #${c.number}</a>`
-  ).join('');
+  cardListEl.innerHTML = cards.map(c => {
+    const contactLabel = c.contact
+      ? ` <span style="color:var(--text-m); font-size:.75rem;">(${escHtml(c.contact.value)})</span>`
+      : '';
+    return `<a href="${escAttr(c.url)}" target="_blank">Card #${c.number}${contactLabel}</a>`;
+  }).join('');
   cardListSection.style.display = 'block';
 }
 
@@ -134,7 +200,8 @@ startBtn.addEventListener('click', async () => {
   const res  = await fetch('/api/game/start', { method: 'POST' });
   const data = await res.json();
   if (!res.ok) { setAlert(gameMsg, data.error, 'error'); return; }
-  setAlert(gameMsg, '▶ Game started! Songs playing on Spotify will now appear here.', 'success');
+  setAlert(gameMsg, '▶ Game started!', 'success');
+  socket.emit('admin:join', { googleId: currentAdminId });
 });
 
 endBtn.addEventListener('click', async () => {
@@ -147,78 +214,97 @@ endBtn.addEventListener('click', async () => {
 resetBtn.addEventListener('click', async () => {
   if (!confirm('Reset everything? This will clear all cards and game state.')) return;
   await fetch('/api/game/reset', { method: 'POST' });
-  cardListEl.innerHTML    = '';
+  cardListEl.innerHTML  = '';
   cardListSection.style.display = 'none';
-  playedList.innerHTML    = '';
+  playedList.innerHTML  = '';
+  playedList.style.display = 'none';
   noSongsMsg.style.display = 'block';
-  winnersBody.innerHTML   = '';
+  winnersBody.innerHTML = '';
   winnersTable.style.display = 'none';
   noWinnersMsg.style.display = 'block';
   nowPlaying.style.display = 'none';
   setAlert(gameMsg, 'Game reset.', 'info');
 });
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function updateGameStatus(status) {
+  const labels  = { idle: 'Idle', active: '● Active', ended: 'Ended' };
+  const classes = { idle: 'status-idle', active: 'status-active', ended: 'status-ended' };
+  gameStatusEl.textContent = labels[status] || status;
+  gameStatusEl.className   = `status-pill ${classes[status] || 'status-idle'}`;
+  startBtn.disabled = status === 'active';
+  endBtn.disabled   = status !== 'active';
+}
+
+function addWinnerRow(w, rank) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><span class="rank-badge ${rank === 1 ? 'first' : ''}">${rank}</span></td>
+    <td>${escHtml(w.playerName)}</td>
+    <td>Card #${w.cardNumber}</td>
+    <td>${new Date(w.claimedAt).toLocaleTimeString()}</td>
+  `;
+  winnersBody.appendChild(tr);
+  winnersTable.style.display = 'table';
+  noWinnersMsg.style.display = 'none';
+}
+
+function addPlayedSong(song) {
+  noSongsMsg.style.display = 'none';
+  playedList.style.display = '';
+  const li = document.createElement('li');
+  li.textContent = `${song.name} – ${song.artists}`;
+  playedList.appendChild(li);
+}
+
+function setAlert(el, msg, type) {
+  if (!msg) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escAttr(str) {
+  return String(str).replace(/"/g, '&quot;');
+}
+
 // ─── Socket events ────────────────────────────────────────────────────────────
 socket.on('game:state', (state) => {
   updateGameStatus(state.status);
-
-  const connected = state.spotifyConnected;
-  spotifyBadge.innerHTML = connected
-    ? '<span style="color:var(--green);">✓ Spotify connected</span>'
-    : '<span style="color:var(--text-m);">Spotify not connected</span>';
-  if (connected) spotifyBtn.textContent = '✓ Reconnect Spotify';
-
-  // Restore played songs
-  if (state.playedSongs && state.playedSongs.length > 0) {
-    noSongsMsg.style.display = 'none';
-    state.playedSongs.forEach(addPlayedSong);
-  }
-
-  // Restore winners
-  if (state.winners && state.winners.length > 0) {
-    state.winners.forEach((w, i) => addWinnerRow(w, i + 1));
-  }
-
-  // Restore cards list
-  if (state.cardCount > 0) {
-    fetch('/api/cards')
-      .then(r => r.json())
-      .then(renderCardList);
+  if (state.currentSong) {
+    npArt.src = state.currentSong.albumArt || '';
+    npTitle.textContent  = state.currentSong.name;
+    npArtist.textContent = state.currentSong.artists;
+    nowPlaying.style.display = 'flex';
   }
 });
 
-socket.on('game:started', (state) => {
-  updateGameStatus(state.status);
-  setAlert(gameMsg, '▶ Game is now active!', 'success');
-});
-
-socket.on('game:ended', (state) => {
-  updateGameStatus(state.status);
-  setAlert(gameMsg, 'Game has ended.', 'info');
-});
-
-socket.on('game:reset', () => {
-  updateGameStatus('idle');
-});
+socket.on('game:started', (state) => { updateGameStatus(state.status); });
+socket.on('game:ended',   (state) => { updateGameStatus(state.status); });
+socket.on('game:reset',   ()      => { updateGameStatus('idle'); });
 
 socket.on('song:playing', (song) => {
-  npArt.src          = song.albumArt || '';
-  npTitle.textContent = song.name;
+  npArt.src = song.albumArt || '';
+  npTitle.textContent  = song.name;
   npArtist.textContent = song.artists;
   nowPlaying.style.display = 'flex';
   addPlayedSong(song);
 });
 
-socket.on('song:paused', () => {
-  nowPlaying.style.display = 'none';
-});
+socket.on('song:paused', () => { nowPlaying.style.display = 'none'; });
 
 socket.on('bingo:claimed', (w) => {
-  const rank = w.rank;
-  addWinnerRow(w, rank);
-  if (rank === 1) {
+  addWinnerRow(w, w.rank);
+  if (w.rank === 1) {
     setAlert(globalAlert,
       `🏆 <strong>${escHtml(w.playerName)}</strong> got BINGO! (Card #${w.cardNumber})`,
       'success');
   }
 });
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadProfile();

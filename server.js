@@ -1,43 +1,59 @@
 /**
  * server.js – Music Bingo Express + Socket.io server.
  *
- * Routes:
- *   GET  /                        Player landing page
- *   GET  /admin                   Admin page
- *   GET  /card/:id                Individual bingo card page
- *   GET  /auth/login              Start Spotify OAuth
- *   GET  /auth/callback           Spotify OAuth callback
+ * Auth:
+ *   GET  /login                      Admin login page
+ *   GET  /auth/google                Start Google OAuth
+ *   GET  /auth/google/callback       Google OAuth callback
+ *   GET  /auth/logout                Log out
+ *   GET  /auth/spotify               Start Spotify OAuth (requires admin login)
+ *   GET  /auth/spotify/callback      Spotify OAuth callback (requires admin login)
  *
- * API:
- *   GET  /api/status              Current game status snapshot
- *   GET  /api/playlist?url=       Fetch playlist info & song count
- *   POST /api/generate            Generate bingo cards
- *   GET  /api/cards               List all generated cards (id + number + link)
- *   GET  /api/card/:id            Get full card data
- *   POST /api/game/start          Start the game
- *   POST /api/game/end            End the game
- *   POST /api/game/reset          Reset everything
- *   POST /api/bingo               Submit a bingo claim
- *   GET  /api/winners             Get the winners list
+ * Pages (admin-protected):
+ *   GET  /admin                      Admin dashboard
+ *
+ * Pages (public):
+ *   GET  /                           Player landing page
+ *   GET  /card/:id                   Individual bingo card page
+ *
+ * API (admin-protected):
+ *   GET  /api/admin/profile          Current admin profile + game state
+ *   GET  /api/admin/playlists        Admin's Spotify playlists
+ *   POST /api/generate               Generate bingo cards (with contact assignment)
+ *   GET  /api/cards                  List cards for current admin
+ *   POST /api/game/start             Start the game
+ *   POST /api/game/end               End the game
+ *   POST /api/game/reset             Reset everything
+ *   GET  /api/winners                Winners list
+ *
+ * API (public):
+ *   GET  /api/card/:id               Get card data (for player page)
+ *   POST /api/bingo                  Submit a bingo claim
  */
 
 'use strict';
 
 require('dotenv').config();
 
-const path = require('path');
-const http = require('http');
+const path    = require('path');
+const http    = require('http');
+const crypto  = require('crypto');
 const express = require('express');
+const session = require('express-session');
 const { Server: SocketServer } = require('socket.io');
-
 const rateLimit = require('express-rate-limit');
 
-const spotify = require('./src/spotify');
+const passport  = require('./src/auth');
+const store     = require('./src/store');
 const { generateCards, validateBingo } = require('./src/bingo');
-const game = require('./src/game');
+const { buildAuthUrl, exchangeCode, extractPlaylistId } = require('./src/spotify');
 
-/** Maximum number of cards that can be generated in one request (memory safety). */
+/** Maximum number of cards per generate request (memory safety). */
 const MAX_CARDS = 500;
+
+const app    = express();
+const server = http.createServer(app);
+const io     = new SocketServer(server);
 
 // ─── Rate limiters ────────────────────────────────────────────────────────────
 
@@ -57,12 +73,46 @@ const strictLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const app = express();
-const server = http.createServer(app);
-const io = new SocketServer(server);
+// ─── Middleware ───────────────────────────────────────────────────────────────
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'music-bingo-dev-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',                                   // CSRF protection for nav-based requests
+      secure: process.env.NODE_ENV === 'production',     // HTTPS-only in production
+      maxAge: 7 * 24 * 60 * 60 * 1000,                  // 7 days
+    },
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+// ─── Auth helpers ─────────────────────────────────────────────────────────────
+
+/** Middleware: require an authenticated admin session. */
+function ensureAdmin(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  if (req.accepts('json') && !req.accepts('html')) {
+    return res.status(401).json({ error: 'Authentication required.' });
+  }
+  res.redirect('/login');
+}
+
+/** Middleware: require an authenticated admin who has connected Spotify. */
+function ensureSpotify(req, res, next) {
+  if (!req.user.hasSpotify()) {
+    return res.status(400).json({ error: 'Spotify not connected. Please authorise first.' });
+  }
+  next();
+}
 
 // ─── HTML page routes ─────────────────────────────────────────────────────────
 
@@ -70,7 +120,11 @@ app.get('/', generalLimiter, (req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'index.html'))
 );
 
-app.get('/admin', generalLimiter, (req, res) =>
+app.get('/login', generalLimiter, (req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'login.html'))
+);
+
+app.get('/admin', generalLimiter, ensureAdmin, (req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'admin.html'))
 );
 
@@ -78,77 +132,126 @@ app.get('/card/:id', generalLimiter, (req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'card.html'))
 );
 
-// ─── Spotify OAuth ────────────────────────────────────────────────────────────
+// ─── Google OAuth ─────────────────────────────────────────────────────────────
 
-app.get('/auth/login',    strictLimiter, spotify.getAuthUrl);
-app.get('/auth/callback', strictLimiter, spotify.handleCallback);
+app.get(
+  '/auth/google',
+  strictLimiter,
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
 
-// ─── API ──────────────────────────────────────────────────────────────────────
+app.get(
+  '/auth/google/callback',
+  strictLimiter,
+  passport.authenticate('google', { failureRedirect: '/login?error=google_auth_failed' }),
+  (req, res) => res.redirect('/admin')
+);
 
-app.get('/api/status', generalLimiter, (req, res) => {
-  res.json({
-    ...game.toJSON(),
-    spotifyConnected: spotify.isAuthenticated(),
+app.get('/auth/logout', strictLimiter, (req, res, next) => {
+  req.logout((err) => {
+    if (err) return next(err);
+    res.redirect('/login');
   });
 });
 
-app.get('/api/playlist', strictLimiter, async (req, res) => {
-  if (!spotify.isAuthenticated()) {
-    return res.status(401).json({ error: 'Spotify not connected. Please authorise first.' });
+// ─── Spotify OAuth (per-admin) ────────────────────────────────────────────────
+
+app.get('/auth/spotify', strictLimiter, ensureAdmin, (req, res) => {
+  const state = crypto.randomBytes(16).toString('hex');
+  req.session.spotifyState = state;
+  res.redirect(buildAuthUrl(state));
+});
+
+app.get('/auth/spotify/callback', strictLimiter, ensureAdmin, async (req, res) => {
+  const { code, error, state } = req.query;
+
+  if (error) {
+    return res.redirect(`/admin?spotify_error=${encodeURIComponent(error)}`);
   }
-
-  const { url } = req.query;
-  const playlistId = spotify.extractPlaylistId(url);
-
-  if (!playlistId) {
-    return res.status(400).json({ error: 'Invalid Spotify playlist URL or ID.' });
+  if (state !== req.session.spotifyState) {
+    return res.redirect('/admin?spotify_error=state_mismatch');
   }
 
   try {
-    const songs = await spotify.getPlaylistSongs(playlistId);
-    res.json({ playlistId, songCount: songs.length, songs });
+    const tokens = await exchangeCode(code);
+    req.user.setSpotifyTokens(tokens);
+    res.redirect('/admin?spotify_success=1');
   } catch (err) {
-    console.error('Playlist fetch error:', err.message);
+    console.error('Spotify auth error:', err.message);
+    res.redirect(`/admin?spotify_error=${encodeURIComponent(err.message)}`);
+  }
+});
+
+// ─── Admin API ────────────────────────────────────────────────────────────────
+
+app.get('/api/admin/profile', generalLimiter, ensureAdmin, (req, res) => {
+  const { googleId, email, name, picture, game } = req.user;
+  res.json({
+    googleId,
+    email,
+    name,
+    picture,
+    spotifyConnected: req.user.hasSpotify(),
+    game: game.toJSON(),
+  });
+});
+
+app.get('/api/admin/playlists', strictLimiter, ensureAdmin, ensureSpotify, async (req, res) => {
+  try {
+    const playlists = await req.user.spotifyClient.getUserPlaylists();
+    res.json(playlists);
+  } catch (err) {
+    console.error('Playlist list error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-app.post('/api/generate', strictLimiter, async (req, res) => {
-  if (!spotify.isAuthenticated()) {
-    return res.status(401).json({ error: 'Spotify not connected. Please authorise first.' });
-  }
+app.post('/api/generate', strictLimiter, ensureAdmin, ensureSpotify, async (req, res) => {
+  const { playlistId, contacts } = req.body;
 
-  const { playlistUrl, count } = req.body;
-  const cardCount = parseInt(count, 10);
-
-  if (!playlistUrl) {
-    return res.status(400).json({ error: 'playlistUrl is required.' });
-  }
-  if (!Number.isFinite(cardCount) || cardCount < 1 || cardCount > MAX_CARDS) {
-    return res.status(400).json({ error: `count must be between 1 and ${MAX_CARDS}.` });
-  }
-
-  const playlistId = spotify.extractPlaylistId(playlistUrl);
   if (!playlistId) {
-    return res.status(400).json({ error: 'Invalid Spotify playlist URL or ID.' });
+    return res.status(400).json({ error: 'playlistId is required.' });
+  }
+
+  if (!Array.isArray(contacts) || contacts.length === 0) {
+    return res.status(400).json({ error: 'contacts must be a non-empty array.' });
+  }
+
+  const totalCards = contacts.reduce((sum, c) => sum + (parseInt(c.count, 10) || 1), 0);
+  if (totalCards > MAX_CARDS) {
+    return res.status(400).json({ error: `Total cards (${totalCards}) exceeds maximum of ${MAX_CARDS}.` });
+  }
+
+  const pid = extractPlaylistId(playlistId);
+  if (!pid) {
+    return res.status(400).json({ error: 'Invalid Spotify playlist ID.' });
   }
 
   try {
-    const songs = await spotify.getPlaylistSongs(playlistId);
+    const songs = await req.user.spotifyClient.getPlaylistSongs(pid);
     if (songs.length < 24) {
       return res.status(400).json({
         error: `Playlist only has ${songs.length} tracks. At least 24 are required.`,
       });
     }
 
-    const cards = generateCards(songs, cardCount);
-    game.setCards(cards, songs, playlistId);
+    // Deindex old cards before replacing them
+    store.deindexCards(req.user.googleId);
+
+    const normalised = contacts
+      .map((c) => ({ value: String(c.value || '').trim(), count: parseInt(c.count, 10) || 1 }))
+      .filter((c) => c.value);
+
+    const cards = generateCards(songs, normalised);
+    req.user.game.setCards(cards, songs, pid);
+    store.indexCards(req.user.googleId, cards);
 
     res.json({
       message: `Generated ${cards.length} bingo cards.`,
+      gameId:  req.user.game.gameId,
       cardCount: cards.length,
       songCount: songs.length,
-      cards: cards.map(({ id, number }) => ({ id, number, url: `/card/${id}` })),
+      cards: cards.map(({ id, number, contact }) => ({ id, number, contact, url: `/card/${id}` })),
     });
   } catch (err) {
     console.error('Card generation error:', err.message);
@@ -156,63 +259,75 @@ app.post('/api/generate', strictLimiter, async (req, res) => {
   }
 });
 
-app.get('/api/cards', generalLimiter, (req, res) => {
+app.get('/api/cards', generalLimiter, ensureAdmin, (req, res) => {
   res.json(
-    game.cards.map(({ id, number }) => ({ id, number, url: `/card/${id}` }))
+    req.user.game.cards.map(({ id, number, contact }) => ({
+      id, number, contact, url: `/card/${id}`,
+    }))
   );
 });
 
-app.get('/api/card/:id', generalLimiter, (req, res) => {
-  const card = game.getCardById(req.params.id);
-  if (!card) return res.status(404).json({ error: 'Card not found.' });
-  res.json(card);
-});
-
-app.post('/api/game/start', strictLimiter, (req, res) => {
+app.post('/api/game/start', strictLimiter, ensureAdmin, (req, res) => {
   try {
-    game.start();
-    startPolling();
-    io.emit('game:started', game.toJSON());
+    req.user.game.start();
+    startPolling(req.user);
+    io.to(`game:${req.user.game.gameId}`).emit('game:started', req.user.game.toJSON());
     res.json({ message: 'Game started.' });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-app.post('/api/game/end', strictLimiter, (req, res) => {
-  game.end();
-  stopPolling();
-  io.emit('game:ended', game.toJSON());
+app.post('/api/game/end', strictLimiter, ensureAdmin, (req, res) => {
+  req.user.game.end();
+  stopPolling(req.user);
+  io.to(`game:${req.user.game.gameId}`).emit('game:ended', req.user.game.toJSON());
   res.json({ message: 'Game ended.' });
 });
 
-app.post('/api/game/reset', strictLimiter, (req, res) => {
-  game.reset();
-  stopPolling();
-  io.emit('game:reset');
+app.post('/api/game/reset', strictLimiter, ensureAdmin, (req, res) => {
+  const oldGameId = req.user.game.gameId;
+  stopPolling(req.user);
+  store.deindexCards(req.user.googleId);
+  req.user.game.reset();
+  if (oldGameId) io.to(`game:${oldGameId}`).emit('game:reset');
   res.json({ message: 'Game reset.' });
 });
 
-app.post('/api/bingo', strictLimiter, (req, res) => {
-  if (game.status !== 'active') {
-    return res.status(400).json({ error: 'No active game.' });
-  }
+app.get('/api/winners', generalLimiter, ensureAdmin, (req, res) => {
+  res.json(req.user.game.winners);
+});
 
+// ─── Public card API ──────────────────────────────────────────────────────────
+
+app.get('/api/card/:id', generalLimiter, (req, res) => {
+  const result = store.findCard(req.params.id);
+  if (!result) return res.status(404).json({ error: 'Card not found.' });
+  const { card, admin } = result;
+  res.json({ ...card, gameId: admin.game.gameId });
+});
+
+app.post('/api/bingo', strictLimiter, async (req, res) => {
   const { cardId, playerName, markedCells } = req.body;
 
   if (!cardId || !playerName || !Array.isArray(markedCells)) {
     return res.status(400).json({ error: 'cardId, playerName, and markedCells are required.' });
   }
 
-  const card = game.getCardById(cardId);
-  if (!card) return res.status(404).json({ error: 'Card not found.' });
+  const result = store.findCard(cardId);
+  if (!result) return res.status(404).json({ error: 'Card not found.' });
 
-  // Check if this card already won
-  if (game.winners.some((w) => w.cardId === cardId)) {
+  const { admin, card } = result;
+
+  if (admin.game.status !== 'active') {
+    return res.status(400).json({ error: 'No active game.' });
+  }
+
+  if (admin.game.winners.some((w) => w.cardId === cardId)) {
     return res.status(400).json({ error: 'This card has already claimed a valid bingo.' });
   }
 
-  const { isValid, pattern } = validateBingo(card.grid, game.playedSongIds, markedCells);
+  const { isValid, pattern } = validateBingo(card.grid, admin.game.playedSongIds, markedCells);
 
   if (!isValid) {
     return res.status(400).json({ error: 'Not a valid bingo. Keep playing!' });
@@ -226,38 +341,33 @@ app.post('/api/bingo', strictLimiter, (req, res) => {
     claimedAt: new Date().toISOString(),
   };
 
-  const rank = game.addWinner(claim);
-  const result = { ...claim, rank };
+  const rank    = admin.game.addWinner(claim);
+  const payload = { ...claim, rank };
 
-  io.emit('bingo:claimed', result);
-  res.json(result);
+  io.to(`game:${admin.game.gameId}`).emit('bingo:claimed', payload);
+  res.json(payload);
 });
 
-app.get('/api/winners', generalLimiter, (req, res) => {
-  res.json(game.winners);
-});
-
-// ─── Spotify polling ──────────────────────────────────────────────────────────
+// ─── Spotify polling (per admin) ──────────────────────────────────────────────
 
 const POLL_INTERVAL_MS = 3000;
-let pollTimer = null;
-let _lastSongId = null;
 
-function startPolling() {
-  if (pollTimer) return;
-  pollTimer = setInterval(async () => {
+function startPolling(admin) {
+  if (admin._pollTimer) return;
+  admin._pollTimer = setInterval(async () => {
     try {
-      const song = await spotify.getCurrentlyPlaying();
+      const song   = await admin.spotifyClient.getCurrentlyPlaying();
+      const gameId = admin.game.gameId;
 
-      if (song && song.id !== _lastSongId) {
-        _lastSongId = song.id;
-        game.recordSong(song);
-        io.emit('song:playing', song);
+      if (song && song.id !== admin._lastSongId) {
+        admin._lastSongId = song.id;
+        admin.game.recordSong(song);
+        io.to(`game:${gameId}`).emit('song:playing', song);
       }
 
-      if (!song && _lastSongId !== null) {
-        _lastSongId = null;
-        io.emit('song:paused');
+      if (!song && admin._lastSongId !== null) {
+        admin._lastSongId = null;
+        io.to(`game:${gameId}`).emit('song:paused');
       }
     } catch (err) {
       console.error('Polling error:', err.message);
@@ -265,21 +375,38 @@ function startPolling() {
   }, POLL_INTERVAL_MS);
 }
 
-function stopPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
+function stopPolling(admin) {
+  if (admin._pollTimer) {
+    clearInterval(admin._pollTimer);
+    admin._pollTimer = null;
   }
-  _lastSongId = null;
+  admin._lastSongId = null;
 }
 
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 
 io.on('connection', (socket) => {
-  // Send current game state to newly-connected client
-  socket.emit('game:state', {
-    ...game.toJSON(),
-    spotifyConnected: spotify.isAuthenticated(),
+  /**
+   * Admin client joins the room for their active game.
+   * Payload: { googleId }
+   */
+  socket.on('admin:join', ({ googleId } = {}) => {
+    const admin = store.getAdmin(googleId);
+    if (!admin || !admin.game.gameId) return;
+    socket.join(`game:${admin.game.gameId}`);
+    socket.emit('game:state', {
+      ...admin.game.toJSON(),
+      spotifyConnected: admin.hasSpotify(),
+    });
+  });
+
+  /**
+   * Player client joins the room for a specific game.
+   * Payload: { gameId }
+   */
+  socket.on('player:join', ({ gameId } = {}) => {
+    if (!gameId) return;
+    socket.join(`game:${gameId}`);
   });
 });
 
@@ -291,4 +418,4 @@ server.listen(PORT, () => {
   console.log(`Admin page: http://localhost:${PORT}/admin`);
 });
 
-module.exports = { app, server }; // exported for testing
+module.exports = { app, server };

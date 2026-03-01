@@ -24,6 +24,9 @@ const noSongsLi    = document.getElementById('no-songs-li');
 const markedCount  = document.getElementById('marked-count');
 const globalAlert  = document.getElementById('global-alert');
 
+/** Number of columns/rows in the bingo grid. */
+const GRID_SIZE = 5;
+
 // ─── State ────────────────────────────────────────────────────────────────────
 const cardId = window.location.pathname.split('/').pop();
 let card        = null;
@@ -91,6 +94,11 @@ async function loadCard() {
     markedCells = loadMarked();
     renderGrid();
     updateMarkedCount();
+
+    // Join the game room so we receive real-time updates for this game
+    if (card.gameId) {
+      socket.emit('player:join', { gameId: card.gameId });
+    }
   } catch (err) {
     setAlert('Failed to load card: ' + err.message, 'error');
   }
@@ -150,7 +158,7 @@ function highlightPlayed(songId) {
   card.grid.forEach((row, r) => {
     row.forEach((cell, c) => {
       if (!cell.isFree && cell.song && cell.song.id === songId) {
-        const idx = r * 5 + c;
+        const idx = r * GRID_SIZE + c;
         const div = bingoGrid.children[idx];
         if (div) div.classList.add('played');
       }
@@ -218,6 +226,8 @@ bingoBtn.addEventListener('click', async () => {
 });
 
 // ─── Socket events ────────────────────────────────────────────────────────────
+
+// When admin emits game:state to us after we join the room
 socket.on('game:state', (state) => {
   updateGameStatus(state.status);
 
@@ -225,16 +235,13 @@ socket.on('game:state', (state) => {
     state.playedSongs.forEach((song) => {
       if (!playedSongIds.has(song.id)) addPlayedSong(song);
     });
-    // Re-render grid to reflect played songs
     if (card) renderGrid();
   }
 
-  if (state.currentSong) {
-    showNowPlaying(state.currentSong);
-  }
+  if (state.currentSong) showNowPlaying(state.currentSong);
 });
 
-socket.on('game:started', (state) => {
+socket.on('game:started', () => {
   updateGameStatus('active');
   playedSongIds = new Set();
   markedCells   = new Set();
@@ -291,9 +298,15 @@ function escHtml(str) {
 
 function friendlyPattern(pattern) {
   if (!pattern) return pattern;
-  if (pattern.startsWith('row-'))      return `Row ${parseInt(pattern.split('-')[1], 10) + 1}`;
-  if (pattern.startsWith('col-'))      return `Column ${parseInt(pattern.split('-')[1], 10) + 1}`;
-  if (pattern === 'diagonal-tl-br')   return 'Diagonal (top-left to bottom-right)';
-  if (pattern === 'diagonal-tr-bl')   return 'Diagonal (top-right to bottom-left)';
+  if (pattern.startsWith('row-')) {
+    const n = parseInt(pattern.slice(4), 10) + 1;
+    return `Row ${n}`;
+  }
+  if (pattern.startsWith('col-')) {
+    const n = parseInt(pattern.slice(4), 10) + 1;
+    return `Column ${n}`;
+  }
+  if (pattern === 'diagonal-tl-br') return 'Diagonal (top-left to bottom-right)';
+  if (pattern === 'diagonal-tr-bl') return 'Diagonal (top-right to bottom-left)';
   return pattern;
 }
