@@ -449,6 +449,29 @@ io.on('connection', (socket) => {
   });
 });
 
+// ─── Keep-alive ping (Render free tier) ──────────────────────────────────────
+//
+// Render's free tier spins a service down after 15 minutes of inactivity.
+// When RENDER_EXTERNAL_URL is present (injected automatically by Render) the
+// server pings its own /health endpoint every 10 minutes so it never sleeps.
+// Pinging every 10 minutes (rather than right at 14) gives a 5-minute buffer:
+// even if one ping is dropped, the next arrives well within the 15-min window.
+
+const KEEP_ALIVE_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes — 5-min buffer before Render's 15-min limit
+
+if (process.env.RENDER_EXTERNAL_URL) {
+  const https = require('https');
+  const keepAliveUrl = `${process.env.RENDER_EXTERNAL_URL}/health`;
+  setInterval(() => {
+    https.get(keepAliveUrl, (res) => {
+      console.log(`Keep-alive ping: ${res.statusCode}`);
+    }).on('error', (err) => {
+      console.error('Keep-alive ping failed:', err.message);
+    });
+  }, KEEP_ALIVE_INTERVAL_MS);
+  console.log(`Keep-alive ping enabled (every ${KEEP_ALIVE_INTERVAL_MS / 60_000} min) → ${keepAliveUrl}`);
+}
+
 // ─── Start server ─────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3000;
