@@ -138,7 +138,8 @@ function renderGrid() {
 
 function toggleCell(div, r, c, cell) {
   if (gameStatus !== 'active') return;
-  if (playerOptions.strictValidation && !playedSongIds.has(cell.song.id)) return;
+  const isCurrentlyPlaying = currentSong?.id === cell.song?.id;
+  if (!isCurrentlyPlaying && playerOptions.strictValidation && !playedSongIds.has(cell.song.id)) return;
 
   const key = `${r},${c}`;
   if (markedCells.has(key)) {
