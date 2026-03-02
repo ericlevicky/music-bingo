@@ -335,4 +335,43 @@ describe('validateBingo', () => {
     expect(isValid).toBe(true);
     expect(pattern).toBe('row-2');
   });
+
+  test('currently-playing song counts as valid even if not yet in playedSongIds', () => {
+    const grid = makeGrid();
+    // Row 0: songs at cols 0–4; only cols 1–4 are in playedIds; col 0 is currently playing
+    const playedIds = new Set([1, 2, 3, 4].map((c) => songIdAt(grid, 0, c)));
+    const currentSongId = songIdAt(grid, 0, 0);
+    const marked = [0, 1, 2, 3, 4].map((c) => ({ row: 0, col: c }));
+    const { isValid, pattern } = validateBingo(grid, playedIds, marked, currentSongId);
+    expect(isValid).toBe(true);
+    expect(pattern).toBe('row-0');
+  });
+
+  test('currently-playing song does not validate an unmarked cell', () => {
+    const grid = makeGrid();
+    const playedIds = new Set([1, 2, 3, 4].map((c) => songIdAt(grid, 0, c)));
+    const currentSongId = songIdAt(grid, 0, 0);
+    // col 0 is NOT marked even though it is currently playing
+    const marked = [1, 2, 3, 4].map((c) => ({ row: 0, col: c }));
+    const { isValid } = validateBingo(grid, playedIds, marked, currentSongId);
+    expect(isValid).toBe(false);
+  });
+
+  test('freeSpace:false does not auto-validate the centre cell', () => {
+    const grid = makeGrid();
+    // Row 2 minus centre: mark and play all 4 non-free cells
+    const playedIds = new Set([0, 1, 3, 4].map((c) => songIdAt(grid, 2, c)));
+    const marked = [0, 1, 3, 4].map((c) => ({ row: 2, col: c }));
+    const { isValid } = validateBingo(grid, playedIds, marked, null, false);
+    expect(isValid).toBe(false);
+  });
+
+  test('freeSpace:true (default) auto-validates the centre cell', () => {
+    const grid = makeGrid();
+    const playedIds = new Set([0, 1, 3, 4].map((c) => songIdAt(grid, 2, c)));
+    const marked = [0, 1, 3, 4].map((c) => ({ row: 2, col: c }));
+    const { isValid, pattern } = validateBingo(grid, playedIds, marked, null, true);
+    expect(isValid).toBe(true);
+    expect(pattern).toBe('row-2');
+  });
 });

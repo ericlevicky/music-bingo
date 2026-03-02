@@ -61,13 +61,14 @@ class GameState {
 
     /**
      * Admin-configurable options that control what players see on their card.
-     * @type {{ showSongHistory: boolean, showNowPlaying: boolean, showHint: boolean, strictValidation: boolean }}
+     * @type {{ showSongHistory: boolean, showNowPlaying: boolean, showHint: boolean, strictValidation: boolean, freeSpace: boolean }}
      */
     this.playerOptions = {
       showSongHistory: true,
       showNowPlaying: true,
       showHint: true,
       strictValidation: true,
+      freeSpace: true,
     };
   }
 
@@ -147,10 +148,10 @@ class GameState {
   /**
    * Update one or more player-facing display options.
    * Only boolean values are accepted; unknown keys are ignored.
-   * @param {{ showSongHistory?: boolean, showNowPlaying?: boolean, showHint?: boolean, strictValidation?: boolean }} opts
+   * @param {{ showSongHistory?: boolean, showNowPlaying?: boolean, showHint?: boolean, strictValidation?: boolean, freeSpace?: boolean }} opts
    */
   setPlayerOptions(opts) {
-    const allowed = ['showSongHistory', 'showNowPlaying', 'showHint', 'strictValidation'];
+    const allowed = ['showSongHistory', 'showNowPlaying', 'showHint', 'strictValidation', 'freeSpace'];
     for (const key of allowed) {
       if (typeof opts[key] === 'boolean') {
         this.playerOptions[key] = opts[key];
