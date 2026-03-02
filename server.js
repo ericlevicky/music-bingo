@@ -329,6 +329,15 @@ app.post('/api/game/reset', strictLimiter, ensureAdmin, (req, res) => {
   res.json({ message: 'Game reset.' });
 });
 
+app.post('/api/game/options', strictLimiter, ensureAdmin, (req, res) => {
+  const { showSongHistory, showNowPlaying, showHint, strictValidation } = req.body;
+  req.user.game.setPlayerOptions({ showSongHistory, showNowPlaying, showHint, strictValidation });
+  if (req.user.game.gameId) {
+    io.to(`game:${req.user.game.gameId}`).emit('game:options', req.user.game.playerOptions);
+  }
+  res.json({ playerOptions: req.user.game.playerOptions });
+});
+
 app.get('/api/winners', generalLimiter, ensureAdmin, (req, res) => {
   res.json(req.user.game.winners);
 });

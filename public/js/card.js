@@ -32,6 +32,13 @@ let playerName  = '';
 let gameStatus  = 'idle';
 let playedSongIds = new Set();
 let markedCells   = new Set(); // "row,col" strings
+let currentSong   = null;     // currently playing track
+let playerOptions = {
+  showSongHistory:  true,
+  showNowPlaying:   true,
+  showHint:         true,
+  strictValidation: true,
+};
 
 // ─── Name gate ────────────────────────────────────────────────────────────────
 function loadName() {
@@ -131,7 +138,7 @@ function renderGrid() {
 
 function toggleCell(div, r, c, cell) {
   if (gameStatus !== 'active') return;
-  if (!playedSongIds.has(cell.song.id)) return; // can only mark played songs
+  if (playerOptions.strictValidation && !playedSongIds.has(cell.song.id)) return;
 
   const key = `${r},${c}`;
   if (markedCells.has(key)) {
@@ -214,6 +221,11 @@ bingoBtn.addEventListener('click', async () => {
 socket.on('game:state', (state) => {
   updateGameStatus(state.status);
 
+  if (state.playerOptions) {
+    playerOptions = { ...playerOptions, ...state.playerOptions };
+    applyPlayerOptions();
+  }
+
   if (state.playedSongs && state.playedSongs.length > 0) {
     state.playedSongs.forEach((song) => {
       if (!playedSongIds.has(song.id)) addPlayedSong(song);
@@ -223,6 +235,7 @@ socket.on('game:state', (state) => {
 
   if (state.currentSong) {
     showNowPlaying(state.currentSong);
+    updateHints(state.currentSong);
     if (songsHistory) songsHistory.style.display = 'none';
   }
 });
@@ -242,12 +255,15 @@ socket.on('game:reset',  () => { updateGameStatus('idle'); });
 socket.on('song:playing', (song) => {
   showNowPlaying(song);
   addPlayedSong(song);
+  updateHints(song);
   if (songsHistory) songsHistory.style.display = 'none';
 });
 
 socket.on('song:paused', () => {
+  currentSong = null;
   nowPlaying.style.display = 'none';
-  if (songsHistory) songsHistory.style.display = '';
+  updateHints(null);
+  if (songsHistory && playerOptions.showSongHistory) songsHistory.style.display = '';
 });
 
 socket.on('bingo:claimed', (w) => {
@@ -258,12 +274,53 @@ socket.on('bingo:claimed', (w) => {
   );
 });
 
+socket.on('game:options', (opts) => {
+  playerOptions = { ...playerOptions, ...opts };
+  applyPlayerOptions();
+});
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function showNowPlaying(song) {
+  currentSong = song;
   npArt.src           = song.albumArt || '';
   npTitle.textContent  = song.name;
   npArtist.textContent = song.artists;
-  nowPlaying.style.display = 'flex';
+  if (playerOptions.showNowPlaying) nowPlaying.style.display = 'flex';
+}
+
+/** Apply current playerOptions to all visible elements. */
+function applyPlayerOptions() {
+  // Song history
+  if (songsHistory) {
+    if (!playerOptions.showSongHistory) {
+      songsHistory.style.display = 'none';
+    } else if (!currentSong) {
+      songsHistory.style.display = '';
+    }
+  }
+  // Now playing banner
+  if (!playerOptions.showNowPlaying) {
+    nowPlaying.style.display = 'none';
+  } else if (currentSong) {
+    nowPlaying.style.display = 'flex';
+  }
+  // Cell hints
+  updateHints(currentSong);
+}
+
+/** Highlight cells whose song matches the currently playing track. */
+function updateHints(song) {
+  document.querySelectorAll('.bingo-cell.hint').forEach((el) => el.classList.remove('hint'));
+  if (!playerOptions.showHint || !song || !card) return;
+  document.querySelectorAll('.bingo-cell').forEach((el) => {
+    const r = parseInt(el.dataset.row, 10);
+    const c = parseInt(el.dataset.col, 10);
+    if (isNaN(r) || isNaN(c)) return;
+    const cell = card.grid[r][c];
+    if (!cell.isFree && cell.song && cell.song.id === song.id) {
+      el.classList.add('hint');
+    }
+  });
 }
 
 function setAlert(msg, type) {

@@ -95,9 +95,34 @@
       </div>
     </div>
 
-    <!-- ── Step 3: Game control ─────────────────────────────────── -->
+    <!-- ── Step 3: Player screen options ───────────────────────── -->
     <div class="section card">
-      <h2>3 · Game Control</h2>
+      <h2>3 · Player Screen Options</h2>
+      <p style="margin-bottom:.85rem;">Control what players see on their bingo card screen.</p>
+      <div style="display:flex; flex-direction:column; gap:.65rem;">
+        <label class="opt-label">
+          <input type="checkbox" id="opt-song-history" checked />
+          Show song history (songs that have already played)
+        </label>
+        <label class="opt-label">
+          <input type="checkbox" id="opt-now-playing" checked />
+          Show currently playing song banner
+        </label>
+        <label class="opt-label">
+          <input type="checkbox" id="opt-hint" checked />
+          Highlight the matching cell when a song is playing
+        </label>
+        <label class="opt-label">
+          <input type="checkbox" id="opt-strict-validation" checked />
+          Only allow marking cells for songs that have played
+        </label>
+      </div>
+      <div id="options-msg" style="margin-top:.75rem;"></div>
+    </div>
+
+    <!-- ── Step 4: Game control ─────────────────────────────────── -->
+    <div class="section card">
+      <h2>4 · Game Control</h2>
 
       <!-- Now playing -->
       <div id="now-playing" style="display:none; margin-bottom:1rem;">
