@@ -344,7 +344,10 @@ socket.on('game:state', (state) => {
 });
 
 socket.on('game:started', (state) => { updateGameStatus(state.status); });
-socket.on('game:ended',   (state) => { updateGameStatus(state.status); });
+socket.on('game:ended',   (state) => {
+  updateGameStatus(state.status);
+  nowPlaying.style.display = 'none';
+});
 socket.on('game:reset',   ()      => { updateGameStatus('idle'); });
 
 socket.on('song:playing', (song) => {

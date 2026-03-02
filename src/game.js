@@ -101,6 +101,7 @@ class GameState {
   end() {
     this.status = 'ended';
     this.endedAt = new Date().toISOString();
+    this.currentSong = null;
   }
 
   reset() {
