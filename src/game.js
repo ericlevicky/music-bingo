@@ -58,6 +58,17 @@ class GameState {
 
     /** @type {string|null} ISO timestamp when the game ended */
     this.endedAt = null;
+
+    /**
+     * Admin-configurable options that control what players see on their card.
+     * @type {{ showSongHistory: boolean, showNowPlaying: boolean, showHint: boolean, strictValidation: boolean }}
+     */
+    this.playerOptions = {
+      showSongHistory: true,
+      showNowPlaying: true,
+      showHint: true,
+      strictValidation: true,
+    };
   }
 
   // ─── Card management ──────────────────────────────────────────────────────
@@ -110,6 +121,22 @@ class GameState {
     }
   }
 
+  // ─── Player options ───────────────────────────────────────────────────────
+
+  /**
+   * Update one or more player-facing display options.
+   * Only boolean values are accepted; unknown keys are ignored.
+   * @param {{ showSongHistory?: boolean, showNowPlaying?: boolean, showHint?: boolean, strictValidation?: boolean }} opts
+   */
+  setPlayerOptions(opts) {
+    const allowed = ['showSongHistory', 'showNowPlaying', 'showHint', 'strictValidation'];
+    for (const key of allowed) {
+      if (typeof opts[key] === 'boolean') {
+        this.playerOptions[key] = opts[key];
+      }
+    }
+  }
+
   // ─── Bingo claims ─────────────────────────────────────────────────────────
 
   /**
@@ -137,6 +164,7 @@ class GameState {
       winners: this.winners,
       startedAt: this.startedAt,
       endedAt: this.endedAt,
+      playerOptions: { ...this.playerOptions },
     };
   }
 }

@@ -34,6 +34,11 @@ const noWinnersMsg      = document.getElementById('no-winners-msg');
 const globalAlert       = document.getElementById('global-alert');
 const adminPic          = document.getElementById('admin-pic');
 const adminName         = document.getElementById('admin-name');
+const optSongHistory    = document.getElementById('opt-song-history');
+const optNowPlaying     = document.getElementById('opt-now-playing');
+const optHint           = document.getElementById('opt-hint');
+const optStrictValid    = document.getElementById('opt-strict-validation');
+const optionsMsg        = document.getElementById('options-msg');
 
 // ─── Admin profile ────────────────────────────────────────────────────────────
 let currentAdminId = null;
@@ -64,6 +69,11 @@ async function loadProfile() {
     if (data.game.cardCount > 0) {
       const cardsRes = await fetch('/api/cards');
       renderCardList(await cardsRes.json());
+    }
+
+    // Sync player screen option checkboxes
+    if (data.game.playerOptions) {
+      syncOptionCheckboxes(data.game.playerOptions);
     }
 
     // Load playlists if Spotify is connected
@@ -285,6 +295,42 @@ function escHtml(str) {
 function escAttr(str) {
   return String(str).replace(/"/g, '&quot;');
 }
+
+// ─── Player screen options ────────────────────────────────────────────────────
+function syncOptionCheckboxes(opts) {
+  if (typeof opts.showSongHistory   === 'boolean') optSongHistory.checked = opts.showSongHistory;
+  if (typeof opts.showNowPlaying    === 'boolean') optNowPlaying.checked  = opts.showNowPlaying;
+  if (typeof opts.showHint          === 'boolean') optHint.checked        = opts.showHint;
+  if (typeof opts.strictValidation  === 'boolean') optStrictValid.checked = opts.strictValidation;
+}
+
+async function savePlayerOptions() {
+  try {
+    const res = await fetch('/api/game/options', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        showSongHistory:  optSongHistory.checked,
+        showNowPlaying:   optNowPlaying.checked,
+        showHint:         optHint.checked,
+        strictValidation: optStrictValid.checked,
+      }),
+    });
+    if (!res.ok) {
+      const d = await res.json();
+      setAlert(optionsMsg, d.error || 'Failed to save options.', 'error');
+    } else {
+      setAlert(optionsMsg, '✓ Options saved.', 'success');
+      setTimeout(() => setAlert(optionsMsg, '', ''), 2000);
+    }
+  } catch (err) {
+    setAlert(optionsMsg, 'Network error: ' + err.message, 'error');
+  }
+}
+
+[optSongHistory, optNowPlaying, optHint, optStrictValid].forEach((cb) => {
+  cb.addEventListener('change', savePlayerOptions);
+});
 
 // ─── Socket events ────────────────────────────────────────────────────────────
 socket.on('game:state', (state) => {
