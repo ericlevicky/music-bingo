@@ -44,8 +44,8 @@ describe('shuffle', () => {
 describe('generateCard', () => {
   const songs = makeSongs(30);
 
-  test('throws if fewer than 24 songs are provided', () => {
-    expect(() => generateCard(makeSongs(23), 1)).toThrow(/at least 24/);
+  test('throws if fewer than 25 songs are provided', () => {
+    expect(() => generateCard(makeSongs(24), 1)).toThrow(/at least 25/);
   });
 
   test('returns a card with id, number, contact, grid, and createdAt', () => {
@@ -69,10 +69,10 @@ describe('generateCard', () => {
     grid.forEach((row) => expect(row).toHaveLength(5));
   });
 
-  test('centre cell (2,2) is the FREE space', () => {
+  test('centre cell (2,2) is the FREE space and has a song assigned', () => {
     const { grid } = generateCard(songs, 1);
     expect(grid[2][2].isFree).toBe(true);
-    expect(grid[2][2].song).toBeNull();
+    expect(grid[2][2].song).not.toBeNull();
   });
 
   test('all non-free cells have a song', () => {
@@ -86,23 +86,27 @@ describe('generateCard', () => {
     );
   });
 
-  test('each of the 24 non-free cells has a unique song', () => {
+  test('the FREE centre cell also has a song assigned', () => {
+    const { grid } = generateCard(songs, 1);
+    expect(grid[2][2].song).not.toBeNull();
+  });
+
+  test('each of the 25 cells has a unique song', () => {
     const { grid } = generateCard(songs, 1);
     const ids = [];
-    grid.forEach((row, r) =>
-      row.forEach((cell, c) => {
-        if (r === 2 && c === 2) return;
+    grid.forEach((row) =>
+      row.forEach((cell) => {
         ids.push(cell.song.id);
       })
     );
-    expect(new Set(ids).size).toBe(24);
+    expect(new Set(ids).size).toBe(25);
   });
 
   test('does not mutate the input songs array', () => {
-    const songs24 = makeSongs(24);
-    const copy = [...songs24];
-    generateCard(songs24, 1);
-    expect(songs24).toEqual(copy);
+    const songs25 = makeSongs(25);
+    const copy = [...songs25];
+    generateCard(songs25, 1);
+    expect(songs25).toEqual(copy);
   });
 });
 
@@ -226,7 +230,8 @@ describe('validateBingo', () => {
       const row = [];
       for (let c = 0; c < 5; c++) {
         if (r === 2 && c === 2) {
-          row.push({ isFree: true, song: null });
+          // Free cell always has a song (like the real generateCard)
+          row.push({ isFree: true, song: makeSong(25) });
         } else {
           row.push({ isFree: false, song: makeSong(idx++) });
         }
@@ -364,6 +369,19 @@ describe('validateBingo', () => {
     const marked = [0, 1, 3, 4].map((c) => ({ row: 2, col: c }));
     const { isValid } = validateBingo(grid, playedIds, marked, null, false);
     expect(isValid).toBe(false);
+  });
+
+  test('freeSpace:false validates centre cell when its song is played and marked', () => {
+    const grid = makeGrid();
+    // Row 2: play and mark all 5 cells including the free space song
+    const playedIds = new Set([
+      ...([0, 1, 3, 4].map((c) => songIdAt(grid, 2, c))),
+      grid[2][2].song.id,
+    ]);
+    const marked = [0, 1, 2, 3, 4].map((c) => ({ row: 2, col: c }));
+    const { isValid, pattern } = validateBingo(grid, playedIds, marked, null, false);
+    expect(isValid).toBe(true);
+    expect(pattern).toBe('row-2');
   });
 
   test('freeSpace:true (default) auto-validates the centre cell', () => {

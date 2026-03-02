@@ -124,7 +124,13 @@ function renderGrid() {
           div.classList.add('free');
           div.textContent = 'FREE';
         } else {
-          div.classList.add('free-disabled');
+          // Free space is disabled – render its song like a regular markable cell.
+          div.innerHTML = `
+            <span class="cell-title">${escHtml(cell.song.name)}</span>
+            <span class="cell-artist">${escHtml(cell.song.artists)}</span>
+          `;
+          if (markedCells.has(`${r},${c}`)) div.classList.add('marked');
+          div.addEventListener('click', () => toggleCell(div, r, c, cell));
         }
       } else {
         div.innerHTML = `
