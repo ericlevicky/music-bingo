@@ -249,7 +249,13 @@ socket.on('game:started', () => {
   setAlert('', '');
 });
 
-socket.on('game:ended', () => { updateGameStatus('ended'); });
+socket.on('game:ended', () => {
+  updateGameStatus('ended');
+  currentSong = null;
+  nowPlaying.style.display = 'none';
+  updateHints(null);
+  if (songsHistory && playerOptions.showSongHistory) songsHistory.style.display = '';
+});
 socket.on('game:reset',  () => { updateGameStatus('idle'); });
 
 socket.on('song:playing', (song) => {
