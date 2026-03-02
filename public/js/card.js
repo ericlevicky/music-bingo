@@ -236,7 +236,6 @@ socket.on('game:state', (state) => {
   if (state.currentSong) {
     showNowPlaying(state.currentSong);
     updateHints(state.currentSong);
-    if (songsHistory) songsHistory.style.display = 'none';
   }
 });
 
@@ -254,7 +253,6 @@ socket.on('game:ended', () => {
   currentSong = null;
   nowPlaying.style.display = 'none';
   updateHints(null);
-  if (songsHistory && playerOptions.showSongHistory) songsHistory.style.display = '';
 });
 socket.on('game:reset',  () => { updateGameStatus('idle'); });
 
@@ -262,14 +260,12 @@ socket.on('song:playing', (song) => {
   showNowPlaying(song);
   addPlayedSong(song);
   updateHints(song);
-  if (songsHistory) songsHistory.style.display = 'none';
 });
 
 socket.on('song:paused', () => {
   currentSong = null;
   nowPlaying.style.display = 'none';
   updateHints(null);
-  if (songsHistory && playerOptions.showSongHistory) songsHistory.style.display = '';
 });
 
 socket.on('bingo:claimed', (w) => {
@@ -300,7 +296,7 @@ function applyPlayerOptions() {
   if (songsHistory) {
     if (!playerOptions.showSongHistory) {
       songsHistory.style.display = 'none';
-    } else if (!currentSong) {
+    } else {
       songsHistory.style.display = '';
     }
   }
