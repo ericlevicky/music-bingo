@@ -330,8 +330,8 @@ app.post('/api/game/reset', strictLimiter, ensureAdmin, (req, res) => {
 });
 
 app.post('/api/game/options', strictLimiter, ensureAdmin, (req, res) => {
-  const { showSongHistory, showNowPlaying, showHint, strictValidation } = req.body;
-  req.user.game.setPlayerOptions({ showSongHistory, showNowPlaying, showHint, strictValidation });
+  const { showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace } = req.body;
+  req.user.game.setPlayerOptions({ showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace });
   if (req.user.game.gameId) {
     io.to(`game:${req.user.game.gameId}`).emit('game:options', req.user.game.playerOptions);
   }
@@ -371,7 +371,13 @@ app.post('/api/bingo', strictLimiter, async (req, res) => {
     return res.status(400).json({ error: 'This card has already claimed a valid bingo.' });
   }
 
-  const { isValid, pattern } = validateBingo(card.grid, admin.game.playedSongIds, markedCells);
+  const { isValid, pattern } = validateBingo(
+    card.grid,
+    admin.game.playedSongIds,
+    markedCells,
+    admin.game.currentSong ? admin.game.currentSong.id : null,
+    admin.game.playerOptions.freeSpace !== false
+  );
 
   if (!isValid) {
     return res.status(400).json({ error: 'Not a valid bingo. Keep playing!' });
@@ -404,15 +410,17 @@ function startPolling(admin) {
       const gameId = admin.game.gameId;
 
       if (song && song.id !== admin._lastSongId) {
+        const previousSong = admin.game.currentSong;
         admin._lastSongId = song.id;
         admin.game.recordSong(song);
-        io.to(`game:${gameId}`).emit('song:playing', song);
+        io.to(`game:${gameId}`).emit('song:playing', { song, previousSong });
       }
 
       if (!song && admin._lastSongId !== null) {
+        const finishedSong = admin.game.currentSong;
         admin._lastSongId = null;
         admin.game.finishCurrentSong();
-        io.to(`game:${gameId}`).emit('song:paused');
+        io.to(`game:${gameId}`).emit('song:paused', { finishedSong });
       }
     } catch (err) {
       console.error('Polling error:', err.message);

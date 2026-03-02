@@ -38,6 +38,7 @@ let playerOptions = {
   showNowPlaying:   true,
   showHint:         true,
   strictValidation: true,
+  freeSpace:        true,
 };
 
 // ─── Name gate ────────────────────────────────────────────────────────────────
@@ -119,8 +120,12 @@ function renderGrid() {
       div.dataset.col = c;
 
       if (cell.isFree) {
-        div.classList.add('free');
-        div.textContent = 'FREE';
+        if (playerOptions.freeSpace !== false) {
+          div.classList.add('free');
+          div.textContent = 'FREE';
+        } else {
+          div.classList.add('free-disabled');
+        }
       } else {
         div.innerHTML = `
           <span class="cell-title">${escHtml(cell.song.name)}</span>
@@ -154,7 +159,8 @@ function toggleCell(div, r, c, cell) {
 }
 
 function updateMarkedCount() {
-  const total = markedCells.size + 1; // +1 for FREE
+  const freeCount = playerOptions.freeSpace !== false ? 1 : 0;
+  const total = markedCells.size + freeCount;
   markedCount.textContent = `${total} / 25 marked`;
 }
 
@@ -257,13 +263,15 @@ socket.on('game:ended', () => {
 });
 socket.on('game:reset',  () => { updateGameStatus('idle'); });
 
-socket.on('song:playing', (song) => {
+socket.on('song:playing', ({ song, previousSong }) => {
+  if (previousSong && !playedSongIds.has(previousSong.id)) addPlayedSong(previousSong);
   showNowPlaying(song);
-  addPlayedSong(song);
   updateHints(song);
 });
 
-socket.on('song:paused', () => {
+socket.on('song:paused', (data = {}) => {
+  const finishedSong = data && data.finishedSong;
+  if (finishedSong && !playedSongIds.has(finishedSong.id)) addPlayedSong(finishedSong);
   currentSong = null;
   nowPlaying.style.display = 'none';
   updateHints(null);
@@ -307,8 +315,12 @@ function applyPlayerOptions() {
   } else if (currentSong) {
     nowPlaying.style.display = 'flex';
   }
+  // Re-render grid to reflect freeSpace change (and restore marked state)
+  if (card) renderGrid();
   // Cell hints
   updateHints(currentSong);
+  // Marked count (freeSpace affects the +1 for FREE)
+  updateMarkedCount();
 }
 
 /** Highlight cells whose song matches the currently playing track. */

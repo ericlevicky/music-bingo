@@ -136,16 +136,19 @@ function detectContactType(value) {
  *
  * Validation rules:
  *  1. A cell may only be counted if the song in that cell has actually been
- *     played (its Spotify track ID appears in `playedSongIds`).
- *  2. The FREE centre cell is always valid.
+ *     played (its Spotify track ID appears in `playedSongIds`) OR is the
+ *     currently-playing track (`currentSongId`).
+ *  2. The FREE centre cell is always valid when `freeSpace` is true.
  *  3. A valid bingo is any complete row, column, or diagonal.
  *
  * @param {Array<Array<Object>>} grid         5×5 card grid.
  * @param {Set<string>}          playedSongIds Set of played Spotify track IDs.
  * @param {Array<{row:number, col:number}>} markedCells Cells the player marked.
+ * @param {string|null} [currentSongId]  ID of the currently-playing track (counts as played).
+ * @param {boolean}     [freeSpace=true] Whether the centre FREE cell is automatically valid.
  * @returns {{ isValid: boolean, pattern: string|null }}
  */
-function validateBingo(grid, playedSongIds, markedCells) {
+function validateBingo(grid, playedSongIds, markedCells, currentSongId = null, freeSpace = true) {
   // Build a quick lookup for player-marked cells.
   const markedSet = new Set(markedCells.map(({ row, col }) => `${row},${col}`));
 
@@ -155,11 +158,11 @@ function validateBingo(grid, playedSongIds, markedCells) {
   for (let r = 0; r < 5; r++) {
     for (let c = 0; c < 5; c++) {
       const cell = grid[r][c];
-      if (cell.isFree) {
+      if (cell.isFree && freeSpace) {
         valid[r][c] = true;
       } else if (
         cell.song &&
-        playedSongIds.has(cell.song.id) &&
+        (playedSongIds.has(cell.song.id) || cell.song.id === currentSongId) &&
         markedSet.has(`${r},${c}`)
       ) {
         valid[r][c] = true;

@@ -182,7 +182,7 @@ input:focus { border-color: var(--green); }
   touch-action: manipulation;
   overflow: hidden;
 }
-.bingo-cell:hover:not(.free) { background: #333; transform: scale(1.03); }
+.bingo-cell:hover:not(.free):not(.free-disabled) { background: #333; transform: scale(1.03); }
 .bingo-cell.free {
   background: rgba(29,185,84,.18);
   border-color: var(--green);
@@ -190,6 +190,12 @@ input:focus { border-color: var(--green); }
   color: var(--green);
   font-weight: 700;
   font-size: .85rem;
+}
+.bingo-cell.free-disabled {
+  background: var(--surface2);
+  border-color: #333;
+  cursor: default;
+  opacity: .4;
 }
 .bingo-cell.played {
   border-color: rgba(29,185,84,.5);

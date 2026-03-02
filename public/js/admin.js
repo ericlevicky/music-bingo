@@ -38,6 +38,7 @@ const optSongHistory    = document.getElementById('opt-song-history');
 const optNowPlaying     = document.getElementById('opt-now-playing');
 const optHint           = document.getElementById('opt-hint');
 const optStrictValid    = document.getElementById('opt-strict-validation');
+const optFreeSpace      = document.getElementById('opt-free-space');
 const optionsMsg        = document.getElementById('options-msg');
 
 // ─── Admin profile ────────────────────────────────────────────────────────────
@@ -302,6 +303,7 @@ function syncOptionCheckboxes(opts) {
   if (typeof opts.showNowPlaying    === 'boolean') optNowPlaying.checked  = opts.showNowPlaying;
   if (typeof opts.showHint          === 'boolean') optHint.checked        = opts.showHint;
   if (typeof opts.strictValidation  === 'boolean') optStrictValid.checked = opts.strictValidation;
+  if (typeof opts.freeSpace         === 'boolean') optFreeSpace.checked   = opts.freeSpace;
 }
 
 async function savePlayerOptions() {
@@ -314,6 +316,7 @@ async function savePlayerOptions() {
         showNowPlaying:   optNowPlaying.checked,
         showHint:         optHint.checked,
         strictValidation: optStrictValid.checked,
+        freeSpace:        optFreeSpace.checked,
       }),
     });
     if (!res.ok) {
@@ -328,7 +331,7 @@ async function savePlayerOptions() {
   }
 }
 
-[optSongHistory, optNowPlaying, optHint, optStrictValid].forEach((cb) => {
+[optSongHistory, optNowPlaying, optHint, optStrictValid, optFreeSpace].forEach((cb) => {
   cb.addEventListener('change', savePlayerOptions);
 });
 
@@ -350,15 +353,18 @@ socket.on('game:ended',   (state) => {
 });
 socket.on('game:reset',   ()      => { updateGameStatus('idle'); });
 
-socket.on('song:playing', (song) => {
+socket.on('song:playing', ({ song, previousSong }) => {
+  if (previousSong) addPlayedSong(previousSong);
   npArt.src = song.albumArt || '';
   npTitle.textContent  = song.name;
   npArtist.textContent = song.artists;
   nowPlaying.style.display = 'flex';
-  addPlayedSong(song);
 });
 
-socket.on('song:paused', () => { nowPlaying.style.display = 'none'; });
+socket.on('song:paused', (data = {}) => {
+  if (data && data.finishedSong) addPlayedSong(data.finishedSong);
+  nowPlaying.style.display = 'none';
+});
 
 socket.on('bingo:claimed', (w) => {
   addWinnerRow(w, w.rank);

@@ -68,6 +68,22 @@ describe('GameState.end()', () => {
   });
 });
 
+describe('GameState.setPlayerOptions()', () => {
+  test('sets freeSpace option', () => {
+    const game = new GameState();
+    expect(game.playerOptions.freeSpace).toBe(true);
+    game.setPlayerOptions({ freeSpace: false });
+    expect(game.playerOptions.freeSpace).toBe(false);
+  });
+
+  test('restores freeSpace via reset', () => {
+    const game = new GameState();
+    game.setPlayerOptions({ freeSpace: false });
+    game.reset();
+    expect(game.playerOptions.freeSpace).toBe(true);
+  });
+});
+
 describe('GameState song history', () => {
   test('song is NOT added to history immediately when it starts playing', () => {
     const game = new GameState();
