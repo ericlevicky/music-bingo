@@ -2,9 +2,11 @@
  * bingo.js – Card generation and validation logic.
  *
  * A standard Music Bingo card is a 5×5 grid.
- * The centre cell (row 2, col 2) is always a FREE space.
- * Each of the remaining 24 cells holds a unique song chosen at random from
- * the supplied playlist.
+ * The centre cell (row 2, col 2) is the FREE space (it always has isFree: true
+ * and is pre-assigned a song so that it becomes a regular markable cell when
+ * the admin disables the free space option).
+ * Each of the 25 cells holds a unique song chosen at random from the supplied
+ * playlist.
  */
 
 'use strict';
@@ -28,19 +30,19 @@ function shuffle(arr) {
 
 /**
  * Build a single 5×5 bingo card from a pool of songs.
- * @param {Array<Object>} songs   Full song list (≥ 24 items).
+ * @param {Array<Object>} songs   Full song list (≥ 25 items).
  * @param {number}        number  Human-readable card number (1-based).
  * @param {{ type: string, value: string }|null} contact  Assigned contact (email or phone) or null.
  * @returns {Object}  Card object.
  */
 function generateCard(songs, number, contact = null) {
-  if (songs.length < 24) {
-    throw new Error('Playlist must contain at least 24 songs to generate a bingo card.');
+  if (songs.length < 25) {
+    throw new Error('Playlist must contain at least 25 songs to generate a bingo card.');
   }
 
-  // Pick 24 unique songs for this card.
+  // Pick 25 unique songs for this card (24 for the grid + 1 for the FREE space).
   const pool = shuffle([...songs]);
-  const selected = pool.slice(0, 24);
+  const selected = pool.slice(0, 25);
 
   const grid = [];
   let songIdx = 0;
@@ -49,8 +51,9 @@ function generateCard(songs, number, contact = null) {
     const rowCells = [];
     for (let col = 0; col < 5; col++) {
       if (row === 2 && col === 2) {
-        // Centre FREE space
-        rowCells.push({ isFree: true, song: null });
+        // Centre FREE space – always assign a real song so that if the admin
+        // disables the free space option the cell becomes a regular markable cell.
+        rowCells.push({ isFree: true, song: selected[24] });
       } else {
         rowCells.push({ isFree: false, song: selected[songIdx++] });
       }
