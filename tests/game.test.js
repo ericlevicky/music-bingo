@@ -51,4 +51,86 @@ describe('GameState.end()', () => {
     expect(game.currentSong).toBeNull();
     expect(game.toJSON().currentSong).toBeNull();
   });
+
+  test('adds currently-playing song to history when game ends', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+
+    game.recordSong(makeSong(1));
+    // Song 1 is now playing but not yet in history
+    expect(game.playedSongs).toHaveLength(0);
+
+    game.end();
+    // Song 1 should now be in history because the game ended
+    expect(game.playedSongs).toHaveLength(1);
+    expect(game.playedSongs[0].id).toBe('song-1');
+  });
+});
+
+describe('GameState song history', () => {
+  test('song is NOT added to history immediately when it starts playing', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+
+    game.recordSong(makeSong(1));
+    expect(game.playedSongs).toHaveLength(0);
+    expect(game.currentSong.id).toBe('song-1');
+  });
+
+  test('previous song is added to history when the next song starts', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+
+    game.recordSong(makeSong(1));
+    expect(game.playedSongs).toHaveLength(0);
+
+    game.recordSong(makeSong(2));
+    // Song 1 should now be in history, song 2 should be current
+    expect(game.playedSongs).toHaveLength(1);
+    expect(game.playedSongs[0].id).toBe('song-1');
+    expect(game.currentSong.id).toBe('song-2');
+  });
+
+  test('finishCurrentSong adds current song to history and clears currentSong', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+
+    game.recordSong(makeSong(1));
+    expect(game.playedSongs).toHaveLength(0);
+
+    game.finishCurrentSong();
+    expect(game.playedSongs).toHaveLength(1);
+    expect(game.playedSongs[0].id).toBe('song-1');
+    expect(game.currentSong).toBeNull();
+  });
+
+  test('duplicate songs are not added to history twice', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+
+    game.recordSong(makeSong(1));
+    game.recordSong(makeSong(2)); // song-1 goes to history
+    game.recordSong(makeSong(1)); // song-2 goes to history, song-1 already there
+    game.finishCurrentSong();     // song-1 (duplicate) would not be re-added
+
+    const ids = game.playedSongs.map((s) => s.id);
+    expect(ids.filter((id) => id === 'song-1')).toHaveLength(1);
+    expect(ids.filter((id) => id === 'song-2')).toHaveLength(1);
+    expect(game.playedSongs).toHaveLength(2);
+  });
+
+  test('finishCurrentSong is a no-op when nothing is playing', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+
+    game.finishCurrentSong(); // nothing playing yet
+    expect(game.playedSongs).toHaveLength(0);
+    expect(game.currentSong).toBeNull();
+  });
 });

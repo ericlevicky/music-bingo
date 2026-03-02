@@ -411,7 +411,7 @@ function startPolling(admin) {
 
       if (!song && admin._lastSongId !== null) {
         admin._lastSongId = null;
-        admin.game.currentSong = null;
+        admin.game.finishCurrentSong();
         io.to(`game:${gameId}`).emit('song:paused');
       }
     } catch (err) {
