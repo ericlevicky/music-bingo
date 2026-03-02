@@ -101,6 +101,7 @@ class GameState {
   end() {
     this.status = 'ended';
     this.endedAt = new Date().toISOString();
+    this._addCurrentSongToHistory();
     this.currentSong = null;
   }
 
@@ -111,14 +112,33 @@ class GameState {
   // ─── Song tracking ────────────────────────────────────────────────────────
 
   /**
-   * Record a newly-played song (called when Spotify reports a song change).
+   * Record the end of the current song to history, then update currentSong to
+   * the newly-detected track. History is updated for the song that just
+   * finished, not the one that is starting.
    * @param {Object} song  Spotify track object (must have .id).
    */
   recordSong(song) {
+    // Add the song that just finished playing to history before switching.
+    this._addCurrentSongToHistory();
     this.currentSong = song;
-    if (!this.playedSongIds.has(song.id)) {
-      this.playedSongs.push({ ...song, playedAt: new Date().toISOString() });
-      this.playedSongIds.add(song.id);
+  }
+
+  /**
+   * Mark the currently-playing song as finished and clear it.
+   * Called when Spotify reports playback has stopped/paused.
+   */
+  finishCurrentSong() {
+    this._addCurrentSongToHistory();
+    this.currentSong = null;
+  }
+
+  /**
+   * Internal helper: push currentSong into playedSongs if not already there.
+   */
+  _addCurrentSongToHistory() {
+    if (this.currentSong && !this.playedSongIds.has(this.currentSong.id)) {
+      this.playedSongs.push({ ...this.currentSong, playedAt: new Date().toISOString() });
+      this.playedSongIds.add(this.currentSong.id);
     }
   }
 
