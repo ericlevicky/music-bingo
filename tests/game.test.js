@@ -76,11 +76,48 @@ describe('GameState.setPlayerOptions()', () => {
     expect(game.playerOptions.freeSpace).toBe(false);
   });
 
-  test('restores freeSpace via reset', () => {
+  test('preserves freeSpace option after reset (options are not wiped)', () => {
     const game = new GameState();
     game.setPlayerOptions({ freeSpace: false });
     game.reset();
-    expect(game.playerOptions.freeSpace).toBe(true);
+    expect(game.playerOptions.freeSpace).toBe(false);
+  });
+});
+
+describe('GameState.reset()', () => {
+  test('preserves gameId, cards, playlistSongs, and playlistId so existing links remain valid', () => {
+    const game = new GameState();
+    const cards = makeCards(3);
+    const songs = makeSongs(24);
+    game.setCards(cards, songs, 'playlist-1');
+    const gameId = game.gameId;
+
+    game.start();
+    game.recordSong(makeSong(1));
+    game.reset();
+
+    expect(game.gameId).toBe(gameId);
+    expect(game.cards).toHaveLength(3);
+    expect(game.playlistSongs).toHaveLength(24);
+    expect(game.playlistId).toBe('playlist-1');
+  });
+
+  test('clears game-progress state on reset', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+    game.recordSong(makeSong(1));
+    game.recordSong(makeSong(2)); // causes song-1 to move to history
+    game.addWinner({ cardId: 'card-0', cardNumber: 1, playerName: 'Alice', pattern: 'row', claimedAt: new Date().toISOString() });
+
+    game.reset();
+
+    expect(game.status).toBe('idle');
+    expect(game.currentSong).toBeNull();
+    expect(game.playedSongs).toHaveLength(0);
+    expect(game.winners).toHaveLength(0);
+    expect(game.startedAt).toBeNull();
+    expect(game.endedAt).toBeNull();
   });
 });
 

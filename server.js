@@ -28,6 +28,7 @@
  *
  * API (public):
  *   GET  /api/card/:id               Get card data (for player page)
+ *   GET  /api/qr                     QR code PNG for the player join page (admin-protected)
  *   POST /api/bingo                  Submit a bingo claim
  */
 
@@ -52,6 +53,7 @@ const passport  = require('./src/auth');
 const store     = require('./src/store');
 const { generateCards, validateBingo } = require('./src/bingo');
 const { buildAuthUrl, exchangeCode, extractPlaylistId } = require('./src/spotify');
+const QRCode = require('qrcode');
 
 /** Maximum number of cards per generate request (memory safety). */
 const MAX_CARDS = 500;
@@ -321,11 +323,11 @@ app.post('/api/game/end', strictLimiter, ensureAdmin, (req, res) => {
 });
 
 app.post('/api/game/reset', strictLimiter, ensureAdmin, (req, res) => {
-  const oldGameId = req.user.game.gameId;
+  const gameId = req.user.game.gameId;
   stopPolling(req.user);
-  store.deindexCards(req.user.googleId);
   req.user.game.reset();
-  if (oldGameId) io.to(`game:${oldGameId}`).emit('game:reset');
+  // Cards and gameId are preserved so existing player links remain valid.
+  if (gameId) io.to(`game:${gameId}`).emit('game:reset');
   res.json({ message: 'Game reset.' });
 });
 
@@ -349,6 +351,19 @@ app.get('/api/card/:id', generalLimiter, (req, res) => {
   if (!result) return res.status(404).json({ error: 'Card not found.' });
   const { card, admin } = result;
   res.json({ ...card, gameId: admin.game.gameId });
+});
+
+// ─── QR code endpoint (admin-protected) ──────────────────────────────────────
+
+app.get('/api/qr', generalLimiter, ensureAdmin, async (req, res) => {
+  const joinUrl = `${req.protocol}://${req.get('host')}/`;
+  try {
+    const png = await QRCode.toBuffer(joinUrl, { type: 'png', width: 300, margin: 2 });
+    res.set('Content-Type', 'image/png').send(png);
+  } catch (err) {
+    console.error('QR code generation failed:', err);
+    res.status(500).json({ error: 'Failed to generate QR code.' });
+  }
 });
 
 app.post('/api/bingo', strictLimiter, async (req, res) => {

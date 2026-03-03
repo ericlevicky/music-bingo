@@ -237,10 +237,8 @@ endBtn.addEventListener('click', async () => {
 });
 
 resetBtn.addEventListener('click', async () => {
-  if (!confirm('Reset everything? This will clear all cards and game state.')) return;
+  if (!confirm('Reset game progress? Played songs and winners will be cleared.\nExisting player links will remain valid.')) return;
   await fetch('/api/game/reset', { method: 'POST' });
-  cardListEl.innerHTML  = '';
-  cardListSection.style.display = 'none';
   playedList.innerHTML  = '';
   playedList.style.display = 'none';
   noSongsMsg.style.display = 'block';
@@ -374,6 +372,24 @@ socket.on('bingo:claimed', (w) => {
       'success');
   }
 });
+
+// ─── QR code modal ────────────────────────────────────────────────────────────
+const qrModal      = document.getElementById('qr-modal');
+const qrImg        = document.getElementById('qr-img');
+const qrUrlEl      = document.getElementById('qr-url');
+const qrClose      = document.getElementById('qr-close');
+const gameQrBtn    = document.getElementById('game-qr-btn');
+
+function openQrModal() {
+  qrImg.src = '/api/qr';
+  qrUrlEl.textContent = window.location.origin + '/';
+  qrModal.style.display = 'flex';
+}
+
+gameQrBtn.addEventListener('click', openQrModal);
+qrClose.addEventListener('click', () => { qrModal.style.display = 'none'; });
+qrModal.addEventListener('click', (e) => { if (e.target === qrModal) qrModal.style.display = 'none'; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') qrModal.style.display = 'none'; });
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 loadProfile();

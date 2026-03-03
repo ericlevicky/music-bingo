@@ -16,6 +16,7 @@
     "memorystore": "^1.6.7",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "qrcode": "^1.5.4",
     "socket.io": "^4.7.5",
     "spotify-web-api-node": "^5.0.2",
     "uuid": "^9.0.1"
