@@ -237,10 +237,8 @@ endBtn.addEventListener('click', async () => {
 });
 
 resetBtn.addEventListener('click', async () => {
-  if (!confirm('Reset everything? This will clear all cards and game state.')) return;
+  if (!confirm('Reset game progress? Played songs and winners will be cleared.\nExisting player links will remain valid.')) return;
   await fetch('/api/game/reset', { method: 'POST' });
-  cardListEl.innerHTML  = '';
-  cardListSection.style.display = 'none';
   playedList.innerHTML  = '';
   playedList.style.display = 'none';
   noSongsMsg.style.display = 'block';

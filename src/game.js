@@ -107,7 +107,16 @@ class GameState {
   }
 
   reset() {
-    this._reset();
+    // Preserve cards, gameId, playlist and player options so that existing
+    // player links remain valid.  Only wipe game-progress state so the
+    // admin can replay the same set of cards without re-sending links.
+    this.status = 'idle';
+    this.currentSong = null;
+    this.playedSongs = [];
+    this.playedSongIds = new Set();
+    this.winners = [];
+    this.startedAt = null;
+    this.endedAt = null;
   }
 
   // ─── Song tracking ────────────────────────────────────────────────────────

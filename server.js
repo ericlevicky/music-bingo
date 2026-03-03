@@ -321,11 +321,11 @@ app.post('/api/game/end', strictLimiter, ensureAdmin, (req, res) => {
 });
 
 app.post('/api/game/reset', strictLimiter, ensureAdmin, (req, res) => {
-  const oldGameId = req.user.game.gameId;
+  const gameId = req.user.game.gameId;
   stopPolling(req.user);
-  store.deindexCards(req.user.googleId);
   req.user.game.reset();
-  if (oldGameId) io.to(`game:${oldGameId}`).emit('game:reset');
+  // Cards and gameId are preserved so existing player links remain valid.
+  if (gameId) io.to(`game:${gameId}`).emit('game:reset');
   res.json({ message: 'Game reset.' });
 });
 
