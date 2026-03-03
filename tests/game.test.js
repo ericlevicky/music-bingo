@@ -112,6 +112,32 @@ describe('GameState.setPlayerOptions()', () => {
     game.reset();
     expect(game.playerOptions.bingoMode).toBe('any-line');
   });
+
+  test('toJSON includes all playerOptions fields', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.setPlayerOptions({ freeSpace: false, bingoMode: 'postage-stamp', showHint: false });
+
+    const json = game.toJSON();
+    expect(json.playerOptions).toBeDefined();
+    expect(json.playerOptions.freeSpace).toBe(false);
+    expect(json.playerOptions.bingoMode).toBe('postage-stamp');
+    expect(json.playerOptions.showHint).toBe(false);
+    // Unchanged options should still be present
+    expect(json.playerOptions.showSongHistory).toBe(true);
+    expect(json.playerOptions.showNowPlaying).toBe(true);
+    expect(json.playerOptions.strictValidation).toBe(true);
+  });
+
+  test('toJSON playerOptions is a defensive copy and does not share the live object', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+
+    const json = game.toJSON();
+    // Mutating the snapshot should not affect the live playerOptions
+    json.playerOptions.freeSpace = false;
+    expect(game.playerOptions.freeSpace).toBe(true);
+  });
 });
 
 describe('GameState song history', () => {

@@ -102,6 +102,10 @@ async function loadCard() {
     card = await res.json();
     cardNumber.textContent = card.number;
     document.title = `Card #${card.number} – Music Bingo`;
+    // Apply the admin's current settings immediately so the first render is correct.
+    if (card.playerOptions) {
+      playerOptions = { ...playerOptions, ...card.playerOptions };
+    }
     markedCells = loadMarked();
     renderGrid();
     updateMarkedCount();
@@ -261,7 +265,10 @@ socket.on('game:state', (state) => {
   }
 });
 
-socket.on('game:started', () => {
+socket.on('game:started', (state = {}) => {
+  if (state.playerOptions) {
+    playerOptions = { ...playerOptions, ...state.playerOptions };
+  }
   updateGameStatus('active');
   playedSongIds = new Set();
   markedCells   = new Set();

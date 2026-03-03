@@ -348,7 +348,7 @@ app.get('/api/card/:id', generalLimiter, (req, res) => {
   const result = store.findCard(req.params.id);
   if (!result) return res.status(404).json({ error: 'Card not found.' });
   const { card, admin } = result;
-  res.json({ ...card, gameId: admin.game.gameId });
+  res.json({ ...card, gameId: admin.game.gameId, playerOptions: { ...admin.game.playerOptions } });
 });
 
 app.post('/api/bingo', strictLimiter, async (req, res) => {
