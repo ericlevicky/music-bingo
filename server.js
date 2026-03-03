@@ -28,7 +28,7 @@
  *
  * API (public):
  *   GET  /api/card/:id               Get card data (for player page)
- *   GET  /api/qr/:id                 QR code PNG for a card URL (admin-protected)
+ *   GET  /api/qr                     QR code PNG for the player join page (admin-protected)
  *   POST /api/bingo                  Submit a bingo claim
  */
 
@@ -355,13 +355,10 @@ app.get('/api/card/:id', generalLimiter, (req, res) => {
 
 // ─── QR code endpoint (admin-protected) ──────────────────────────────────────
 
-app.get('/api/qr/:cardId', generalLimiter, ensureAdmin, async (req, res) => {
-  const card = req.user.game.getCardById(req.params.cardId);
-  if (!card) return res.status(404).json({ error: 'Card not found.' });
-
-  const cardUrl = `${req.protocol}://${req.get('host')}/card/${req.params.cardId}`;
+app.get('/api/qr', generalLimiter, ensureAdmin, async (req, res) => {
+  const joinUrl = `${req.protocol}://${req.get('host')}/`;
   try {
-    const png = await QRCode.toBuffer(cardUrl, { type: 'png', width: 300, margin: 2 });
+    const png = await QRCode.toBuffer(joinUrl, { type: 'png', width: 300, margin: 2 });
     res.set('Content-Type', 'image/png').send(png);
   } catch (err) {
     console.error('QR code generation failed:', err);

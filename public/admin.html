@@ -88,9 +88,10 @@
       <div id="generate-msg"></div>
 
       <div id="card-list-section" style="display:none; margin-top:1rem;">
-        <p style="margin-bottom:.75rem; font-size:.9rem;">
-          Share these links with your players:
-        </p>
+        <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:.75rem; flex-wrap:wrap;">
+          <p style="margin:0; font-size:.9rem;">Share these links with your players:</p>
+          <button class="btn btn-grey" id="game-qr-btn" style="padding:.3rem .85rem; font-size:.85rem;" aria-label="Show game QR code">🔲 Game QR Code</button>
+        </div>
         <div id="card-list" class="card-list"></div>
       </div>
     </div>
@@ -171,10 +172,10 @@
   <script src="/js/admin.js"></script>
 
   <!-- QR code modal -->
-  <div id="qr-modal" class="qr-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
+  <div id="qr-modal" class="qr-modal" style="display:none;" role="dialog" aria-modal="true" aria-label="Scan to join the game">
     <div class="qr-modal-box">
       <button id="qr-close" class="qr-close" aria-label="Close">&times;</button>
-      <h3 id="qr-modal-title">Scan to open your card</h3>
+      <h3>Scan to join the game</h3>
       <img id="qr-img" src="" alt="QR code" class="qr-img" />
       <p id="qr-url" class="qr-url"></p>
     </div>

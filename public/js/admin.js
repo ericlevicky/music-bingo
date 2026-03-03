@@ -215,8 +215,7 @@ function renderCardList(cards) {
     const contactLabel = c.contact
       ? ` <span style="color:var(--text-m); font-size:.75rem;">(${escHtml(c.contact.value)})</span>`
       : '';
-    const cardId = c.id;
-    return `<span class="card-list-item"><a href="${escAttr(c.url)}" target="_blank">Card #${c.number}${contactLabel}</a>${shareBtn}<button class="share-btn qr-btn" data-card-id="${escAttr(cardId)}" data-card-num="${c.number}" title="Show QR code" aria-label="Show QR code for Card #${c.number}">&#x2B1C;</button></span>`;
+    return `<span class="card-list-item"><a href="${escAttr(c.url)}" target="_blank">Card #${c.number}${contactLabel}</a>${shareBtn}</span>`;
   }).join('');
   cardListSection.style.display = 'block';
 }
@@ -378,25 +377,19 @@ socket.on('bingo:claimed', (w) => {
 const qrModal      = document.getElementById('qr-modal');
 const qrImg        = document.getElementById('qr-img');
 const qrUrlEl      = document.getElementById('qr-url');
-const qrModalTitle = document.getElementById('qr-modal-title');
 const qrClose      = document.getElementById('qr-close');
+const gameQrBtn    = document.getElementById('game-qr-btn');
 
-function openQrModal(cardId, cardNum) {
-  qrModalTitle.textContent = `Card #${cardNum} – Scan to open`;
-  qrImg.src = `/api/qr/${encodeURIComponent(cardId)}`;
-  qrUrlEl.textContent = `${window.location.origin}/card/${cardId}`;
+function openQrModal() {
+  qrImg.src = '/api/qr';
+  qrUrlEl.textContent = window.location.origin + '/';
   qrModal.style.display = 'flex';
 }
 
+gameQrBtn.addEventListener('click', openQrModal);
 qrClose.addEventListener('click', () => { qrModal.style.display = 'none'; });
 qrModal.addEventListener('click', (e) => { if (e.target === qrModal) qrModal.style.display = 'none'; });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') qrModal.style.display = 'none'; });
-
-cardListEl.addEventListener('click', (e) => {
-  const btn = e.target.closest('.qr-btn');
-  if (!btn) return;
-  openQrModal(btn.dataset.cardId, btn.dataset.cardNum);
-});
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 loadProfile();

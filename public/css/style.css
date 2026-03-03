@@ -371,7 +371,6 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
   line-height: 1;
 }
 .qr-close:hover { color: var(--text); }
-.qr-btn { font-size: .8rem; cursor: pointer; background: none; border: none; }
 
 /* ─── Responsive tweaks ──────────────────────────────────────────────────── */
 @media (max-width: 600px) {
