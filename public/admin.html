@@ -169,5 +169,15 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/admin.js"></script>
+
+  <!-- QR code modal -->
+  <div id="qr-modal" class="qr-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
+    <div class="qr-modal-box">
+      <button id="qr-close" class="qr-close" aria-label="Close">&times;</button>
+      <h3 id="qr-modal-title">Scan to open your card</h3>
+      <img id="qr-img" src="" alt="QR code" class="qr-img" />
+      <p id="qr-url" class="qr-url"></p>
+    </div>
+  </div>
 </body>
 </html>

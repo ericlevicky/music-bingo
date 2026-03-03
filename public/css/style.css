@@ -325,6 +325,54 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
   flex-shrink: 0;
 }
 
+/* ─── QR code modal ──────────────────────────────────────────────────────── */
+.qr-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.qr-modal-box {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  text-align: center;
+  position: relative;
+  max-width: 360px;
+  width: 90%;
+}
+.qr-modal-box h3 { margin-bottom: 1rem; }
+.qr-img {
+  width: 240px;
+  height: 240px;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto .75rem;
+  background: #fff;
+}
+.qr-url {
+  font-size: .75rem;
+  color: var(--text-m);
+  word-break: break-all;
+  margin-top: .5rem;
+}
+.qr-close {
+  position: absolute;
+  top: .6rem;
+  right: .8rem;
+  background: none;
+  border: none;
+  color: var(--text-m);
+  font-size: 1.4rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.qr-close:hover { color: var(--text); }
+.qr-btn { font-size: .8rem; cursor: pointer; background: none; border: none; }
+
 /* ─── Responsive tweaks ──────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .bingo-cell { font-size: .55rem; padding: .2rem; }

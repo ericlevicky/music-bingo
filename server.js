@@ -28,6 +28,7 @@
  *
  * API (public):
  *   GET  /api/card/:id               Get card data (for player page)
+ *   GET  /api/qr/:id                 QR code PNG for a card URL (admin-protected)
  *   POST /api/bingo                  Submit a bingo claim
  */
 
@@ -52,6 +53,7 @@ const passport  = require('./src/auth');
 const store     = require('./src/store');
 const { generateCards, validateBingo } = require('./src/bingo');
 const { buildAuthUrl, exchangeCode, extractPlaylistId } = require('./src/spotify');
+const QRCode = require('qrcode');
 
 /** Maximum number of cards per generate request (memory safety). */
 const MAX_CARDS = 500;
@@ -349,6 +351,22 @@ app.get('/api/card/:id', generalLimiter, (req, res) => {
   if (!result) return res.status(404).json({ error: 'Card not found.' });
   const { card, admin } = result;
   res.json({ ...card, gameId: admin.game.gameId });
+});
+
+// ─── QR code endpoint (admin-protected) ──────────────────────────────────────
+
+app.get('/api/qr/:cardId', generalLimiter, ensureAdmin, async (req, res) => {
+  const card = req.user.game.getCardById(req.params.cardId);
+  if (!card) return res.status(404).json({ error: 'Card not found.' });
+
+  const cardUrl = `${req.protocol}://${req.get('host')}/card/${req.params.cardId}`;
+  try {
+    const png = await QRCode.toBuffer(cardUrl, { type: 'png', width: 300, margin: 2 });
+    res.set('Content-Type', 'image/png').send(png);
+  } catch (err) {
+    console.error('QR code generation failed:', err);
+    res.status(500).json({ error: 'Failed to generate QR code.' });
+  }
 });
 
 app.post('/api/bingo', strictLimiter, async (req, res) => {
