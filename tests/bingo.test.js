@@ -6,7 +6,7 @@
 
 'use strict';
 
-const { generateCard, generateCards, validateBingo, shuffle, detectContactType } = require('../src/bingo');
+const { generateCard, generateCards, generateGrid, validateBingo, shuffle, detectContactType } = require('../src/bingo');
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -107,6 +107,59 @@ describe('generateCard', () => {
     const copy = [...songs25];
     generateCard(songs25, 1);
     expect(songs25).toEqual(copy);
+  });
+});
+
+// ─── generateGrid ───────────────────────────────────────────────────────────────
+
+describe('generateGrid', () => {
+  const songs = makeSongs(30);
+
+  test('throws if fewer than 25 songs are provided', () => {
+    expect(() => generateGrid(makeSongs(24))).toThrow(/at least 25/);
+  });
+
+  test('returns a 5×5 grid', () => {
+    const grid = generateGrid(songs);
+    expect(grid).toHaveLength(5);
+    grid.forEach((row) => expect(row).toHaveLength(5));
+  });
+
+  test('centre cell (2,2) is the FREE space and has a song assigned', () => {
+    const grid = generateGrid(songs);
+    expect(grid[2][2].isFree).toBe(true);
+    expect(grid[2][2].song).not.toBeNull();
+  });
+
+  test('each of the 25 cells has a unique song', () => {
+    const grid = generateGrid(songs);
+    const ids = [];
+    grid.forEach((row) => row.forEach((cell) => ids.push(cell.song.id)));
+    expect(new Set(ids).size).toBe(25);
+  });
+
+  test('does not mutate the input songs array', () => {
+    const songs25 = makeSongs(25);
+    const copy = [...songs25];
+    generateGrid(songs25);
+    expect(songs25).toEqual(copy);
+  });
+
+  test('successive calls produce different grids (not always identical)', () => {
+    // With 30 songs and random shuffle the odds of two identical grids are
+    // astronomically small; this guards against a broken (non-random) impl.
+    const grid1 = generateGrid(songs);
+    const grid2 = generateGrid(songs);
+    const ids1 = grid1.flat().map((c) => c.song.id).join(',');
+    const ids2 = grid2.flat().map((c) => c.song.id).join(',');
+    // It is theoretically possible they are equal, but practically never.
+    // We run 5 pairs and expect at least one difference.
+    const anyDiff = Array.from({ length: 5 }).some(() => {
+      const a = generateGrid(songs).flat().map((c) => c.song.id).join(',');
+      const b = generateGrid(songs).flat().map((c) => c.song.id).join(',');
+      return a !== b;
+    });
+    expect(anyDiff).toBe(true);
   });
 });
 
