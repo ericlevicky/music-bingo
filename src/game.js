@@ -128,6 +128,7 @@ class GameState {
     this.winners = [];
     this.startedAt = null;
     this.endedAt = null;
+    this.playerOptions.bingoMode = 'any-line';
   }
 
   // ─── Song tracking ────────────────────────────────────────────────────────
