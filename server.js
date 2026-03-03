@@ -51,7 +51,7 @@ const MemStoreSession = MemoryStore(session);
 
 const passport  = require('./src/auth');
 const store     = require('./src/store');
-const { generateCards, generateCard, validateBingo } = require('./src/bingo');
+const { generateCards, generateCard, generateGrid, detectContactType, validateBingo } = require('./src/bingo');
 const { buildAuthUrl, exchangeCode, extractPlaylistId } = require('./src/spotify');
 const QRCode = require('qrcode');
 
@@ -275,6 +275,19 @@ app.post('/api/generate', strictLimiter, ensureAdmin, ensureSpotify, async (req,
       });
     }
 
+    // Build a lookup of existing cards by contact value so we can reuse their
+    // IDs when the same contact appears in the new request.  This preserves the
+    // player's link URL while still giving them a fresh board.
+    const existingByContact = new Map();
+    for (const card of req.user.game.cards) {
+      if (card.contact && card.contact.value) {
+        if (!existingByContact.has(card.contact.value)) {
+          existingByContact.set(card.contact.value, []);
+        }
+        existingByContact.get(card.contact.value).push(card);
+      }
+    }
+
     // Deindex old cards before replacing them
     store.deindexCards(req.user.googleId);
 
@@ -282,7 +295,33 @@ app.post('/api/generate', strictLimiter, ensureAdmin, ensureSpotify, async (req,
       .map((c) => ({ value: String(c.value || '').trim(), count: parseInt(c.count, 10) || 1 }))
       .filter((c) => c.value);
 
-    const cards = generateCards(songs, normalised);
+    // Generate cards, reusing the existing card ID (and therefore the player's
+    // link) whenever the contact value matches a previously-generated card.
+    const cards = [];
+    let cardNumber = 1;
+    for (const entry of normalised) {
+      const perContact = entry.count || 1;
+      const contact = { type: detectContactType(entry.value), value: entry.value };
+      const existingForContact = existingByContact.get(entry.value) || [];
+
+      for (let i = 0; i < perContact; i++) {
+        const existing = existingForContact[i];
+        if (existing) {
+          // Reuse existing card ID – just give the player a new board.
+          cards.push({
+            id: existing.id,
+            number: cardNumber,
+            contact,
+            grid: generateGrid(songs),
+            createdAt: new Date().toISOString(),
+          });
+        } else {
+          cards.push(generateCard(songs, cardNumber, contact));
+        }
+        cardNumber++;
+      }
+    }
+
     req.user.game.setCards(cards, songs, pid);
     store.indexCards(req.user.googleId, cards);
 
@@ -329,7 +368,13 @@ app.post('/api/game/reset', strictLimiter, ensureAdmin, (req, res) => {
   const gameId = req.user.game.gameId;
   stopPolling(req.user);
   req.user.game.reset();
-  // Cards and gameId are preserved so existing player links remain valid.
+  // Card IDs and gameId are preserved so existing player links remain valid.
+  // Regenerate the grid content for each card so players get fresh boards.
+  if (req.user.game.playlistSongs && req.user.game.playlistSongs.length >= 25) {
+    for (const card of req.user.game.cards) {
+      card.grid = generateGrid(req.user.game.playlistSongs);
+    }
+  }
   if (gameId) io.to(`game:${gameId}`).emit('game:reset');
   res.json({ message: 'Game reset.' });
 });

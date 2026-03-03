@@ -29,18 +29,18 @@ function shuffle(arr) {
 }
 
 /**
- * Build a single 5×5 bingo card from a pool of songs.
- * @param {Array<Object>} songs   Full song list (≥ 25 items).
- * @param {number}        number  Human-readable card number (1-based).
- * @param {{ type: string, value: string }|null} contact  Assigned contact (email or phone) or null.
- * @returns {Object}  Card object.
+ * Build a freshly-shuffled 5×5 grid from a pool of songs.
+ * Extracted so callers can regenerate grids on existing cards (keeping the
+ * same card ID) without creating a whole new card object.
+ * @param {Array<Object>} songs  Full song list (≥ 25 items).
+ * @returns {Array<Array<Object>>}  5×5 grid of cell objects.
  */
-function generateCard(songs, number, contact = null) {
+function generateGrid(songs) {
   if (songs.length < 25) {
     throw new Error('Playlist must contain at least 25 songs to generate a bingo card.');
   }
 
-  // Pick 25 unique songs for this card (24 for the grid + 1 for the FREE space).
+  // Pick 25 unique songs for this grid (24 for regular cells + 1 for FREE space).
   const pool = shuffle([...songs]);
   const selected = pool.slice(0, 25);
 
@@ -61,11 +61,22 @@ function generateCard(songs, number, contact = null) {
     grid.push(rowCells);
   }
 
+  return grid;
+}
+
+/**
+ * Build a single 5×5 bingo card from a pool of songs.
+ * @param {Array<Object>} songs   Full song list (≥ 25 items).
+ * @param {number}        number  Human-readable card number (1-based).
+ * @param {{ type: string, value: string }|null} contact  Assigned contact (email or phone) or null.
+ * @returns {Object}  Card object.
+ */
+function generateCard(songs, number, contact = null) {
   return {
     id: uuidv4(),
     number,
     contact,  // { type: 'email'|'phone'|'other', value: string } | null
-    grid,
+    grid: generateGrid(songs),
     createdAt: new Date().toISOString(),
   };
 }
@@ -228,4 +239,4 @@ function validateBingo(grid, playedSongIds, markedCells, currentSongId = null, f
   return { isValid: false, pattern: null };
 }
 
-module.exports = { generateCard, generateCards, validateBingo, shuffle, detectContactType };
+module.exports = { generateCard, generateCards, generateGrid, validateBingo, shuffle, detectContactType };
