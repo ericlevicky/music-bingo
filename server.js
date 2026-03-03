@@ -330,8 +330,8 @@ app.post('/api/game/reset', strictLimiter, ensureAdmin, (req, res) => {
 });
 
 app.post('/api/game/options', strictLimiter, ensureAdmin, (req, res) => {
-  const { showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace } = req.body;
-  req.user.game.setPlayerOptions({ showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace });
+  const { showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace, bingoMode } = req.body;
+  req.user.game.setPlayerOptions({ showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace, bingoMode });
   if (req.user.game.gameId) {
     io.to(`game:${req.user.game.gameId}`).emit('game:options', req.user.game.playerOptions);
   }
@@ -376,7 +376,8 @@ app.post('/api/bingo', strictLimiter, async (req, res) => {
     admin.game.playedSongIds,
     markedCells,
     admin.game.currentSong ? admin.game.currentSong.id : null,
-    admin.game.playerOptions.freeSpace !== false
+    admin.game.playerOptions.freeSpace !== false,
+    admin.game.playerOptions.bingoMode || 'any-line'
   );
 
   if (!isValid) {

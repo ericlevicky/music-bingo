@@ -120,6 +120,16 @@
           <input type="checkbox" id="opt-free-space" checked />
           Enable free space (centre cell is automatically valid)
         </label>
+        <div class="form-group" style="max-width:360px; margin-top:.4rem;">
+          <label for="opt-bingo-mode">Bingo mode</label>
+          <select id="opt-bingo-mode" style="width:100%; padding:.6rem .85rem;
+            background:var(--surface2); border:1.5px solid #444; border-radius:var(--radius);
+            color:var(--text); font-size:.95rem; outline:none;">
+            <option value="any-line">Normal – any row, column, or diagonal</option>
+            <option value="postage-stamp">Postage Stamp – any 2×2 corner block</option>
+            <option value="full-board">Full Board – every cell (blackout)</option>
+          </select>
+        </div>
       </div>
       <div id="options-msg" style="margin-top:.75rem;"></div>
     </div>

@@ -82,6 +82,36 @@ describe('GameState.setPlayerOptions()', () => {
     game.reset();
     expect(game.playerOptions.freeSpace).toBe(true);
   });
+
+  test('defaults bingoMode to any-line', () => {
+    const game = new GameState();
+    expect(game.playerOptions.bingoMode).toBe('any-line');
+  });
+
+  test('sets bingoMode to postage-stamp', () => {
+    const game = new GameState();
+    game.setPlayerOptions({ bingoMode: 'postage-stamp' });
+    expect(game.playerOptions.bingoMode).toBe('postage-stamp');
+  });
+
+  test('sets bingoMode to full-board', () => {
+    const game = new GameState();
+    game.setPlayerOptions({ bingoMode: 'full-board' });
+    expect(game.playerOptions.bingoMode).toBe('full-board');
+  });
+
+  test('ignores unknown bingoMode values', () => {
+    const game = new GameState();
+    game.setPlayerOptions({ bingoMode: 'invalid-mode' });
+    expect(game.playerOptions.bingoMode).toBe('any-line');
+  });
+
+  test('restores bingoMode to any-line via reset', () => {
+    const game = new GameState();
+    game.setPlayerOptions({ bingoMode: 'full-board' });
+    game.reset();
+    expect(game.playerOptions.bingoMode).toBe('any-line');
+  });
 });
 
 describe('GameState song history', () => {

@@ -181,6 +181,8 @@ input:focus { border-color: var(--green); }
   user-select: none;
   touch-action: manipulation;
   overflow: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .bingo-cell:hover:not(.free):not(.free-disabled) { background: #333; transform: scale(1.03); }
 .bingo-cell.free {
@@ -214,6 +216,11 @@ input:focus { border-color: var(--green); }
 .bingo-cell .cell-title  { font-weight: 600; margin-bottom: 1px; }
 .bingo-cell .cell-artist { color: var(--text-m); font-size: .6rem; }
 .bingo-cell.marked .cell-artist { color: rgba(0,0,0,.7); }
+
+/* ─── Long song-title scaling ────────────────────────────────────────────── */
+/* Applied by JS when the song title exceeds character-length thresholds.    */
+.cell-title-sm .cell-title { font-size: .58rem; }
+.cell-title-xs .cell-title { font-size: .5rem; }
 
 /* ─── Card list (admin) ──────────────────────────────────────────────────── */
 .card-list { display: flex; flex-wrap: wrap; gap: .6rem; }
@@ -328,6 +335,8 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
 /* ─── Responsive tweaks ──────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .bingo-cell { font-size: .55rem; padding: .2rem; }
+  .cell-title-sm .cell-title { font-size: .46rem; }
+  .cell-title-xs .cell-title { font-size: .41rem; }
   h1 { font-size: 1.5rem; }
   .splash h1 { font-size: 2rem; }
   #bingo-btn { font-size: 1.1rem; }

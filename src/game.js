@@ -60,8 +60,9 @@ class GameState {
     this.endedAt = null;
 
     /**
-     * Admin-configurable options that control what players see on their card.
-     * @type {{ showSongHistory: boolean, showNowPlaying: boolean, showHint: boolean, strictValidation: boolean, freeSpace: boolean }}
+     * Admin-configurable options that control what players see on their card
+     * and how bingo is validated.
+     * @type {{ showSongHistory: boolean, showNowPlaying: boolean, showHint: boolean, strictValidation: boolean, freeSpace: boolean, bingoMode: string }}
      */
     this.playerOptions = {
       showSongHistory: true,
@@ -69,6 +70,7 @@ class GameState {
       showHint: true,
       strictValidation: true,
       freeSpace: true,
+      bingoMode: 'any-line',
     };
   }
 
@@ -147,15 +149,20 @@ class GameState {
 
   /**
    * Update one or more player-facing display options.
-   * Only boolean values are accepted; unknown keys are ignored.
-   * @param {{ showSongHistory?: boolean, showNowPlaying?: boolean, showHint?: boolean, strictValidation?: boolean, freeSpace?: boolean }} opts
+   * Boolean keys are accepted for display flags; `bingoMode` accepts a string.
+   * Unknown keys are ignored.
+   * @param {{ showSongHistory?: boolean, showNowPlaying?: boolean, showHint?: boolean, strictValidation?: boolean, freeSpace?: boolean, bingoMode?: string }} opts
    */
   setPlayerOptions(opts) {
-    const allowed = ['showSongHistory', 'showNowPlaying', 'showHint', 'strictValidation', 'freeSpace'];
-    for (const key of allowed) {
+    const boolKeys = ['showSongHistory', 'showNowPlaying', 'showHint', 'strictValidation', 'freeSpace'];
+    for (const key of boolKeys) {
       if (typeof opts[key] === 'boolean') {
         this.playerOptions[key] = opts[key];
       }
+    }
+    const validModes = ['any-line', 'postage-stamp', 'full-board'];
+    if (typeof opts.bingoMode === 'string' && validModes.includes(opts.bingoMode)) {
+      this.playerOptions.bingoMode = opts.bingoMode;
     }
   }
 

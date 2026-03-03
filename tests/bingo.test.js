@@ -393,3 +393,146 @@ describe('validateBingo', () => {
     expect(pattern).toBe('row-2');
   });
 });
+
+// ─── validateBingo – postage-stamp mode ────────────────────────────────────────
+
+describe('validateBingo – postage-stamp mode', () => {
+  function makeGrid() {
+    const grid = [];
+    let idx = 1;
+    for (let r = 0; r < 5; r++) {
+      const row = [];
+      for (let c = 0; c < 5; c++) {
+        if (r === 2 && c === 2) {
+          row.push({ isFree: true, song: makeSong(25) });
+        } else {
+          row.push({ isFree: false, song: makeSong(idx++) });
+        }
+      }
+      grid.push(row);
+    }
+    return grid;
+  }
+
+  function songIdAt(grid, r, c) { return grid[r][c].song.id; }
+
+  test('validates top-left corner (postage-stamp-tl)', () => {
+    const grid = makeGrid();
+    const corners = [[0,0],[0,1],[1,0],[1,1]];
+    const playedIds = new Set(corners.map(([r, c]) => songIdAt(grid, r, c)));
+    const marked = corners.map(([r, c]) => ({ row: r, col: c }));
+    const { isValid, pattern } = validateBingo(grid, playedIds, marked, null, true, 'postage-stamp');
+    expect(isValid).toBe(true);
+    expect(pattern).toBe('postage-stamp-tl');
+  });
+
+  test('validates top-right corner (postage-stamp-tr)', () => {
+    const grid = makeGrid();
+    const corners = [[0,3],[0,4],[1,3],[1,4]];
+    const playedIds = new Set(corners.map(([r, c]) => songIdAt(grid, r, c)));
+    const marked = corners.map(([r, c]) => ({ row: r, col: c }));
+    const { isValid, pattern } = validateBingo(grid, playedIds, marked, null, true, 'postage-stamp');
+    expect(isValid).toBe(true);
+    expect(pattern).toBe('postage-stamp-tr');
+  });
+
+  test('validates bottom-left corner (postage-stamp-bl)', () => {
+    const grid = makeGrid();
+    const corners = [[3,0],[3,1],[4,0],[4,1]];
+    const playedIds = new Set(corners.map(([r, c]) => songIdAt(grid, r, c)));
+    const marked = corners.map(([r, c]) => ({ row: r, col: c }));
+    const { isValid, pattern } = validateBingo(grid, playedIds, marked, null, true, 'postage-stamp');
+    expect(isValid).toBe(true);
+    expect(pattern).toBe('postage-stamp-bl');
+  });
+
+  test('validates bottom-right corner (postage-stamp-br)', () => {
+    const grid = makeGrid();
+    const corners = [[3,3],[3,4],[4,3],[4,4]];
+    const playedIds = new Set(corners.map(([r, c]) => songIdAt(grid, r, c)));
+    const marked = corners.map(([r, c]) => ({ row: r, col: c }));
+    const { isValid, pattern } = validateBingo(grid, playedIds, marked, null, true, 'postage-stamp');
+    expect(isValid).toBe(true);
+    expect(pattern).toBe('postage-stamp-br');
+  });
+
+  test('rejects a full row in postage-stamp mode', () => {
+    const grid = makeGrid();
+    const playedIds = new Set([0,1,2,3,4].map((c) => songIdAt(grid, 0, c)));
+    const marked = [0,1,2,3,4].map((c) => ({ row: 0, col: c }));
+    const { isValid } = validateBingo(grid, playedIds, marked, null, true, 'postage-stamp');
+    expect(isValid).toBe(false);
+  });
+
+  test('rejects an incomplete corner in postage-stamp mode', () => {
+    const grid = makeGrid();
+    // Only 3 of 4 top-left corner cells are played/marked
+    const playedIds = new Set([[0,0],[0,1],[1,0]].map(([r,c]) => songIdAt(grid, r, c)));
+    const marked = [[0,0],[0,1],[1,0]].map(([r,c]) => ({ row: r, col: c }));
+    const { isValid } = validateBingo(grid, playedIds, marked, null, true, 'postage-stamp');
+    expect(isValid).toBe(false);
+  });
+});
+
+// ─── validateBingo – full-board mode ───────────────────────────────────────────
+
+describe('validateBingo – full-board mode', () => {
+  function makeGrid() {
+    const grid = [];
+    let idx = 1;
+    for (let r = 0; r < 5; r++) {
+      const row = [];
+      for (let c = 0; c < 5; c++) {
+        if (r === 2 && c === 2) {
+          row.push({ isFree: true, song: makeSong(25) });
+        } else {
+          row.push({ isFree: false, song: makeSong(idx++) });
+        }
+      }
+      grid.push(row);
+    }
+    return grid;
+  }
+
+  function songIdAt(grid, r, c) { return grid[r][c].song.id; }
+
+  /** Mark and play every non-free cell; the free cell is auto-valid. */
+  function allPlayedAndMarked(grid) {
+    const playedIds = new Set();
+    const marked = [];
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (!(r === 2 && c === 2)) {
+          playedIds.add(songIdAt(grid, r, c));
+          marked.push({ row: r, col: c });
+        }
+      }
+    }
+    return { playedIds, marked };
+  }
+
+  test('validates a completely marked board', () => {
+    const grid = makeGrid();
+    const { playedIds, marked } = allPlayedAndMarked(grid);
+    const { isValid, pattern } = validateBingo(grid, playedIds, marked, null, true, 'full-board');
+    expect(isValid).toBe(true);
+    expect(pattern).toBe('full-board');
+  });
+
+  test('rejects a board with one cell missing', () => {
+    const grid = makeGrid();
+    const { playedIds, marked } = allPlayedAndMarked(grid);
+    // Remove one cell from marked
+    marked.pop();
+    const { isValid } = validateBingo(grid, playedIds, marked, null, true, 'full-board');
+    expect(isValid).toBe(false);
+  });
+
+  test('rejects a single complete row in full-board mode', () => {
+    const grid = makeGrid();
+    const playedIds = new Set([0,1,2,3,4].map((c) => songIdAt(grid, 0, c)));
+    const marked = [0,1,2,3,4].map((c) => ({ row: 0, col: c }));
+    const { isValid } = validateBingo(grid, playedIds, marked, null, true, 'full-board');
+    expect(isValid).toBe(false);
+  });
+});
