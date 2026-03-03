@@ -4,12 +4,97 @@ A real-time Music Bingo web app.  An admin generates bingo cards from a Spotify 
 
 ## How it works
 
-| Who | What they see |
-|-----|---------------|
-| **Admin** | `/admin` — connect Spotify, pick a playlist, generate cards, start/end the game, watch the leaderboard |
-| **Player** | `/card/<id>` — their personal bingo card; cells light up as songs play; they click **BINGO!** to claim |
+Music Bingo is a multiplayer game where players match songs that are playing on Spotify to cells on their personal bingo card.  An admin controls the game; players just need a phone or laptop with a browser — no Spotify account required.
 
-Real-time updates (currently playing song, BINGO claims, winners) are pushed via **WebSockets** (Socket.io).
+### Roles at a glance
+
+| Role | URL | What they do |
+|------|-----|--------------|
+| **Admin** | `/admin` | Signs in with Google, connects Spotify, generates cards, shares links, starts/ends the game, watches the leaderboard |
+| **Player** | `/card/<id>` | Opens their unique card link, marks cells as songs play, clicks **BINGO!** to claim a win |
+
+---
+
+### Admin flow (step by step)
+
+1. **Sign in with Google** — Visit `/admin` and authenticate with your Google account.  Each Google account gets its own isolated game state on the server.
+
+2. **Connect Spotify** — Click **Connect with Spotify** to authorise the app to read your playlists and detect the currently-playing track.  The server stores and automatically refreshes your Spotify tokens in memory for the duration of the server process.
+
+3. **Generate bingo cards** — Pick a playlist from the dropdown (it must contain at least 25 tracks), then either:
+   - Enter one player contact per line (email address or phone number) in the contacts box, or
+   - Leave the contacts box empty and specify a plain count.
+
+   Click **Generate cards**.  The server randomly selects 25 unique songs per card and arranges them in a 5×5 grid.  The centre cell is marked as a FREE space (can be toggled off in step 4).
+
+4. **Share card links** — Each card gets a unique URL (`/card/<uuid>`).  The admin dashboard lists every card with a copy link button.  Alternatively, click **🔲 Game QR Code** to display a QR code pointing to the player join page (`/?game=<gameId>`); players who scan it enter their name and receive a freshly generated card on the spot.
+
+5. **Configure player options** — Before starting the game, use the *Player Screen Options* panel to control what players see:
+
+   | Option | Effect |
+   |--------|--------|
+   | Show song history | Toggles the list of already-played songs at the bottom of the player card |
+   | Show currently-playing banner | Toggles the "Now Playing" track banner at the top of the card |
+   | Highlight matching cell | Pulses the cell that matches the song currently playing |
+   | Strict validation | When on, players can only mark cells for songs that have actually been detected as playing |
+   | Free space | When on, the centre cell is automatically valid for all players |
+   | Bingo mode | Controls what pattern counts as a win (see below) |
+
+6. **Start the game** — Click **▶ Start Game**.  The server begins polling the Spotify API every few seconds.  Each time the track changes, the new song is broadcast to all connected players in real time via **Socket.io**.
+
+7. **Watch live updates** — The admin dashboard shows:
+   - A *Now Playing* panel with album art and track info
+   - A running list of every song played so far
+   - A live **Winners** leaderboard ranked by the time each BINGO was claimed
+
+8. **End and reset** — Click **⏹ End Game** to stop accepting new BINGO claims.  Use **↺ Reset** to clear the game progress (played songs, winners) while keeping the same cards and links valid, so you can replay the game without re-sending URLs to players.
+
+---
+
+### Player flow (step by step)
+
+1. Open the card link sent by the admin (or scan the QR code, enter your name, and receive a card automatically).
+2. If prompted, type your name — it is shown to the admin and on the winners leaderboard when you claim BINGO.
+3. Wait for the game to start.  The card shows a *"Waiting for game…"* status until the admin clicks **▶ Start Game**.
+4. When a song plays, the **Now Playing** banner updates and (if enabled by the admin) the matching cell on your card is highlighted.
+5. Click a cell to mark it.  Cells can only be marked for songs that have been played (when strict validation is on), or freely (when it is off).
+6. When you have a complete winning pattern, click the **BINGO!** button.  The server validates your claim against the list of songs that have actually played and, if valid, records you as a winner with a timestamp and rank.
+
+---
+
+### Bingo win patterns
+
+| Mode | Win condition |
+|------|--------------|
+| **Normal (any-line)** | Any complete row, column, or diagonal |
+| **Postage Stamp** | Any filled 2×2 block in one of the four corners |
+| **Full Board (Blackout)** | Every cell on the card must be validly marked |
+
+---
+
+### How Spotify detection works
+
+While the game is active the server polls `GET /me/player/currently-playing` on behalf of the admin every few seconds.  When the track changes:
+
+1. The previous song is added to the *played songs* history.
+2. The new track is broadcast to every connected browser via a `song-change` Socket.io event.
+3. Players see the Now Playing banner update and (if enabled) their matching card cell light up.
+
+Players do **not** need a Spotify account — only the admin does.
+
+---
+
+### Real-time events (Socket.io)
+
+All live updates travel over a single persistent WebSocket connection between the server and each browser tab:
+
+| Event | Direction | What it carries |
+|-------|-----------|-----------------|
+| `song-change` | Server → all clients | New track metadata (title, artist, album art) |
+| `game-started` | Server → all clients | Game status update |
+| `game-ended` | Server → all clients | Game status update |
+| `bingo-claimed` | Server → all clients | Winner name, card number, rank |
+| `options-changed` | Server → all clients | Updated player display options |
 
 ---
 
