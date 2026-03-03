@@ -225,6 +225,7 @@ input:focus { border-color: var(--green); }
 /* ─── Card list (admin) ──────────────────────────────────────────────────── */
 .card-list { display: flex; flex-wrap: wrap; gap: .6rem; }
 .card-list-item { display: inline-flex; align-items: center; gap: .3rem; }
+.card-contact-label { color: var(--text-m); font-size: .75rem; }
 .card-list a {
   background: var(--surface2);
   border-radius: 50px;

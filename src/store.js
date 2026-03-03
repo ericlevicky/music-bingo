@@ -53,15 +53,25 @@ class AdminStore {
 
   /**
    * Return the AdminData for `googleId`, creating it if it doesn't exist.
+   * Profile fields (name, email, picture) are always refreshed from Google so
+   * the displayed name is always current even if the admin logs in multiple
+   * times within a single server session.
    * @param {string} googleId
    * @param {{ googleId, email, name, picture }} profile
    * @returns {AdminData}
    */
   getOrCreate(googleId, profile) {
-    if (!this._admins.has(googleId)) {
-      this._admins.set(googleId, new AdminData(profile));
+    let admin = this._admins.get(googleId);
+    if (!admin) {
+      admin = new AdminData(profile);
+      this._admins.set(googleId, admin);
+    } else {
+      // Refresh profile fields so they are always current from Google.
+      admin.email   = profile.email;
+      admin.name    = profile.name;
+      admin.picture = profile.picture || null;
     }
-    return this._admins.get(googleId);
+    return admin;
   }
 
   /**

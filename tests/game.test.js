@@ -20,6 +20,50 @@ function makeCards(n) {
   return Array.from({ length: n }, (_, i) => ({ id: `card-${i}`, number: i + 1 }));
 }
 
+describe('GameState.addCard()', () => {
+  test('appends a card to the existing card list', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    expect(game.cards).toHaveLength(2);
+
+    const newCard = { id: 'card-new', number: 3 };
+    game.addCard(newCard);
+
+    expect(game.cards).toHaveLength(3);
+    expect(game.cards[2]).toBe(newCard);
+  });
+
+  test('does not change the gameId when adding a card', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    const gameId = game.gameId;
+
+    game.addCard({ id: 'card-new', number: 3 });
+
+    expect(game.gameId).toBe(gameId);
+  });
+
+  test('new card is findable via getCardById', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+
+    game.addCard({ id: 'card-new', number: 3 });
+
+    expect(game.getCardById('card-new')).not.toBeNull();
+  });
+
+  test('existing cards remain accessible after addCard', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+
+    game.addCard({ id: 'card-new', number: 3 });
+
+    expect(game.getCardById('card-0')).not.toBeNull();
+    expect(game.getCardById('card-1')).not.toBeNull();
+  });
+});
+
+
 describe('GameState.end()', () => {
   test('sets status to ended', () => {
     const game = new GameState();

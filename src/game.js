@@ -83,6 +83,15 @@ class GameState {
     this.playlistId = playlistId;
   }
 
+  /**
+   * Append a single card (e.g. one generated on-demand when a player joins via
+   * QR code) without replacing the existing card set or changing the gameId.
+   * @param {Object} card  Card object produced by generateCard().
+   */
+  addCard(card) {
+    this.cards.push(card);
+  }
+
   getCardById(id) {
     return this.cards.find((c) => c.id === id) || null;
   }
