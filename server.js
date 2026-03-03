@@ -51,12 +51,15 @@ const MemStoreSession = MemoryStore(session);
 
 const passport  = require('./src/auth');
 const store     = require('./src/store');
-const { generateCards, validateBingo } = require('./src/bingo');
+const { generateCards, generateCard, validateBingo } = require('./src/bingo');
 const { buildAuthUrl, exchangeCode, extractPlaylistId } = require('./src/spotify');
 const QRCode = require('qrcode');
 
 /** Maximum number of cards per generate request (memory safety). */
 const MAX_CARDS = 500;
+
+/** Maximum length of a player name submitted via the join endpoint. */
+const MAX_PLAYER_NAME_LENGTH = 64;
 
 const app    = express();
 const server = http.createServer(app);
@@ -356,7 +359,10 @@ app.get('/api/card/:id', generalLimiter, (req, res) => {
 // ─── QR code endpoint (admin-protected) ──────────────────────────────────────
 
 app.get('/api/qr', generalLimiter, ensureAdmin, async (req, res) => {
-  const joinUrl = `${req.protocol}://${req.get('host')}/`;
+  if (!req.user.game.gameId) {
+    return res.status(400).json({ error: 'Generate bingo cards before showing the QR code.' });
+  }
+  const joinUrl = `${req.protocol}://${req.get('host')}/?game=${req.user.game.gameId}`;
   try {
     const png = await QRCode.toBuffer(joinUrl, { type: 'png', width: 300, margin: 2 });
     res.set('Content-Type', 'image/png').send(png);
@@ -364,6 +370,55 @@ app.get('/api/qr', generalLimiter, ensureAdmin, async (req, res) => {
     console.error('QR code generation failed:', err);
     res.status(500).json({ error: 'Failed to generate QR code.' });
   }
+});
+
+// ─── Player join endpoint (public) ───────────────────────────────────────────
+
+app.post('/api/join', strictLimiter, (req, res) => {
+  const { playerName, gameId } = req.body;
+
+  if (!playerName || typeof playerName !== 'string') {
+    return res.status(400).json({ error: 'playerName is required.' });
+  }
+  const name = playerName.trim().slice(0, MAX_PLAYER_NAME_LENGTH);
+  if (!name) {
+    return res.status(400).json({ error: 'playerName cannot be empty.' });
+  }
+
+  if (!gameId || typeof gameId !== 'string') {
+    return res.status(400).json({ error: 'gameId is required.' });
+  }
+
+  const admin = store.findAdminByGameId(gameId);
+  if (!admin) {
+    return res.status(404).json({ error: 'Game not found.' });
+  }
+
+  if (!admin.game.playlistSongs || admin.game.playlistSongs.length < 25) {
+    return res.status(400).json({ error: 'No playlist available. Ask the admin to set up the game.' });
+  }
+
+  if (admin.game.cards.length >= MAX_CARDS) {
+    return res.status(400).json({ error: 'Maximum number of cards reached.' });
+  }
+
+  const cardNumber = admin.game.cards.length + 1;
+  const contact = { type: 'name', value: name };
+  const card = generateCard(admin.game.playlistSongs, cardNumber, contact);
+
+  admin.game.addCard(card);
+  store.indexCards(admin.googleId, [card]);
+
+  const cardUrl = `/card/${card.id}`;
+
+  io.to(`game:${gameId}`).emit('player:joined', {
+    id: card.id,
+    number: card.number,
+    contact: card.contact,
+    url: cardUrl,
+  });
+
+  res.json({ id: card.id, url: cardUrl });
 });
 
 app.post('/api/bingo', strictLimiter, async (req, res) => {

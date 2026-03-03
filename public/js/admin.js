@@ -44,6 +44,7 @@ const optionsMsg        = document.getElementById('options-msg');
 
 // ─── Admin profile ────────────────────────────────────────────────────────────
 let currentAdminId = null;
+let currentGameId  = null;
 
 async function loadProfile() {
   try {
@@ -52,6 +53,7 @@ async function loadProfile() {
     const data = await res.json();
 
     currentAdminId = data.googleId;
+    currentGameId  = data.game.gameId;
     adminName.textContent = data.name || data.email;
     if (data.picture) {
       adminPic.src = data.picture;
@@ -214,7 +216,7 @@ function renderCardList(cards) {
     }
 
     const contactLabel = c.contact
-      ? ` <span style="color:var(--text-m); font-size:.75rem;">(${escHtml(c.contact.value)})</span>`
+      ? ` <span class="card-contact-label">(${escHtml(c.contact.value)})</span>`
       : '';
     return `<span class="card-list-item"><a href="${escAttr(c.url)}" target="_blank">Card #${c.number}${contactLabel}</a>${shareBtn}</span>`;
   }).join('');
@@ -339,6 +341,7 @@ optBingoMode.addEventListener('change', savePlayerOptions);
 
 // ─── Socket events ────────────────────────────────────────────────────────────
 socket.on('game:state', (state) => {
+  currentGameId = state.gameId;
   updateGameStatus(state.status);
   if (state.currentSong) {
     npArt.src = state.currentSong.albumArt || '';
@@ -377,6 +380,17 @@ socket.on('bingo:claimed', (w) => {
   }
 });
 
+socket.on('player:joined', (card) => {
+  const contactLabel = card.contact
+    ? ` <span class="card-contact-label">(${escHtml(card.contact.value)})</span>`
+    : '';
+  const item = document.createElement('span');
+  item.className = 'card-list-item';
+  item.innerHTML = `<a href="${escAttr(card.url)}" target="_blank">Card #${card.number}${contactLabel}</a>`;
+  cardListEl.appendChild(item);
+  cardListSection.style.display = 'block';
+});
+
 // ─── QR code modal ────────────────────────────────────────────────────────────
 const qrModal      = document.getElementById('qr-modal');
 const qrImg        = document.getElementById('qr-img');
@@ -385,8 +399,12 @@ const qrClose      = document.getElementById('qr-close');
 const gameQrBtn    = document.getElementById('game-qr-btn');
 
 function openQrModal() {
+  if (!currentGameId) {
+    setAlert(globalAlert, 'Generate bingo cards before showing the QR code.', 'error');
+    return;
+  }
   qrImg.src = '/api/qr';
-  qrUrlEl.textContent = window.location.origin + '/';
+  qrUrlEl.textContent = window.location.origin + '/?game=' + currentGameId;
   qrModal.style.display = 'flex';
 }
 
