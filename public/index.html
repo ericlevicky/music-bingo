@@ -80,6 +80,7 @@
             return;
           }
 
+          sessionStorage.setItem('musicbingo_player', name);
           window.location.href = data.url;
         } catch (err) {
           setMsg('Network error: ' + err.message, 'error');
