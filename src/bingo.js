@@ -142,16 +142,20 @@ function detectContactType(value) {
  *     played (its Spotify track ID appears in `playedSongIds`) OR is the
  *     currently-playing track (`currentSongId`).
  *  2. The FREE centre cell is always valid when `freeSpace` is true.
- *  3. A valid bingo is any complete row, column, or diagonal.
+ *  3. Which pattern counts as a win depends on `bingoMode`:
+ *       'any-line'      – any complete row, column, or diagonal (default)
+ *       'postage-stamp' – any 2×2 block in one of the four corners
+ *       'full-board'    – every cell on the card
  *
  * @param {Array<Array<Object>>} grid         5×5 card grid.
  * @param {Set<string>}          playedSongIds Set of played Spotify track IDs.
  * @param {Array<{row:number, col:number}>} markedCells Cells the player marked.
- * @param {string|null} [currentSongId]  ID of the currently-playing track (counts as played).
- * @param {boolean}     [freeSpace=true] Whether the centre FREE cell is automatically valid.
+ * @param {string|null} [currentSongId]   ID of the currently-playing track (counts as played).
+ * @param {boolean}     [freeSpace=true]  Whether the centre FREE cell is automatically valid.
+ * @param {string}      [bingoMode='any-line'] Win condition: 'any-line'|'postage-stamp'|'full-board'.
  * @returns {{ isValid: boolean, pattern: string|null }}
  */
-function validateBingo(grid, playedSongIds, markedCells, currentSongId = null, freeSpace = true) {
+function validateBingo(grid, playedSongIds, markedCells, currentSongId = null, freeSpace = true, bingoMode = 'any-line') {
   // Build a quick lookup for player-marked cells.
   const markedSet = new Set(markedCells.map(({ row, col }) => `${row},${col}`));
 
@@ -172,6 +176,30 @@ function validateBingo(grid, playedSongIds, markedCells, currentSongId = null, f
       }
     }
   }
+
+  if (bingoMode === 'postage-stamp') {
+    // Any 2×2 block in one of the four corners counts as a win.
+    const corners = [
+      { cells: [[0, 0], [0, 1], [1, 0], [1, 1]], name: 'postage-stamp-tl' },
+      { cells: [[0, 3], [0, 4], [1, 3], [1, 4]], name: 'postage-stamp-tr' },
+      { cells: [[3, 0], [3, 1], [4, 0], [4, 1]], name: 'postage-stamp-bl' },
+      { cells: [[3, 3], [3, 4], [4, 3], [4, 4]], name: 'postage-stamp-br' },
+    ];
+    for (const { cells, name } of corners) {
+      if (cells.every(([r, c]) => valid[r][c])) {
+        return { isValid: true, pattern: name };
+      }
+    }
+    return { isValid: false, pattern: null };
+  }
+
+  if (bingoMode === 'full-board') {
+    // Every cell on the card must be validly marked.
+    const allValid = valid.every((row) => row.every(Boolean));
+    return { isValid: allValid, pattern: allValid ? 'full-board' : null };
+  }
+
+  // Default: 'any-line' – any complete row, column, or diagonal.
 
   // Check rows
   for (let r = 0; r < 5; r++) {

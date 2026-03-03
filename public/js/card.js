@@ -1,7 +1,11 @@
 /* card.js – Player bingo card logic */
 'use strict';
 
-const STORAGE_KEY_PREFIX = 'musicbingo_marked_';
+const STORAGE_KEY_PREFIX  = 'musicbingo_marked_';
+// Character-length thresholds for scaling down long song titles in bingo cells.
+// These coordinate with the .cell-title-sm / .cell-title-xs CSS classes.
+const TITLE_SM_THRESHOLD  = 14;  // titles longer than this get a smaller font
+const TITLE_XS_THRESHOLD  = 22;  // titles longer than this get an even smaller font
 
 const socket = io();
 
@@ -39,6 +43,7 @@ let playerOptions = {
   showHint:         true,
   strictValidation: true,
   freeSpace:        true,
+  bingoMode:        'any-line',
 };
 
 // ─── Name gate ────────────────────────────────────────────────────────────────
@@ -97,6 +102,10 @@ async function loadCard() {
     card = await res.json();
     cardNumber.textContent = card.number;
     document.title = `Card #${card.number} – Music Bingo`;
+    // Apply the admin's current settings immediately so the first render is correct.
+    if (card.playerOptions) {
+      playerOptions = { ...playerOptions, ...card.playerOptions };
+    }
     markedCells = loadMarked();
     renderGrid();
     updateMarkedCount();
@@ -125,6 +134,8 @@ function renderGrid() {
           div.textContent = 'FREE';
         } else {
           // Free space is disabled – render its song like a regular markable cell.
+          div.title = `${cell.song.name} – ${cell.song.artists}`;
+          applyLongTitleClass(div, cell.song.name);
           div.innerHTML = `
             <span class="cell-title">${escHtml(cell.song.name)}</span>
             <span class="cell-artist">${escHtml(cell.song.artists)}</span>
@@ -133,6 +144,8 @@ function renderGrid() {
           div.addEventListener('click', () => toggleCell(div, r, c, cell));
         }
       } else {
+        div.title = `${cell.song.name} – ${cell.song.artists}`;
+        applyLongTitleClass(div, cell.song.name);
         div.innerHTML = `
           <span class="cell-title">${escHtml(cell.song.name)}</span>
           <span class="cell-artist">${escHtml(cell.song.artists)}</span>
@@ -252,7 +265,10 @@ socket.on('game:state', (state) => {
   }
 });
 
-socket.on('game:started', () => {
+socket.on('game:started', (state = {}) => {
+  if (state.playerOptions) {
+    playerOptions = { ...playerOptions, ...state.playerOptions };
+  }
   updateGameStatus('active');
   playedSongIds = new Set();
   markedCells   = new Set();
@@ -354,6 +370,13 @@ function setBingoMsg(msg, type) {
   bingoMsg.innerHTML = `<div class="alert alert-${type}" style="text-align:center;">${msg}</div>`;
 }
 
+/** Apply a CSS modifier class to scale down font for long song titles. */
+function applyLongTitleClass(el, title) {
+  const len = (title || '').length;
+  if (len > TITLE_XS_THRESHOLD) el.classList.add('cell-title-xs');
+  else if (len > TITLE_SM_THRESHOLD) el.classList.add('cell-title-sm');
+}
+
 function escHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -374,5 +397,10 @@ function friendlyPattern(pattern) {
   }
   if (pattern === 'diagonal-tl-br') return 'Diagonal (top-left to bottom-right)';
   if (pattern === 'diagonal-tr-bl') return 'Diagonal (top-right to bottom-left)';
+  if (pattern === 'postage-stamp-tl') return 'Postage Stamp (top-left corner)';
+  if (pattern === 'postage-stamp-tr') return 'Postage Stamp (top-right corner)';
+  if (pattern === 'postage-stamp-bl') return 'Postage Stamp (bottom-left corner)';
+  if (pattern === 'postage-stamp-br') return 'Postage Stamp (bottom-right corner)';
+  if (pattern === 'full-board') return 'Full Board (Blackout!)';
   return pattern;
 }

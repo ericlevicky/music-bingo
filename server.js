@@ -332,8 +332,8 @@ app.post('/api/game/reset', strictLimiter, ensureAdmin, (req, res) => {
 });
 
 app.post('/api/game/options', strictLimiter, ensureAdmin, (req, res) => {
-  const { showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace } = req.body;
-  req.user.game.setPlayerOptions({ showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace });
+  const { showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace, bingoMode } = req.body;
+  req.user.game.setPlayerOptions({ showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace, bingoMode });
   if (req.user.game.gameId) {
     io.to(`game:${req.user.game.gameId}`).emit('game:options', req.user.game.playerOptions);
   }
@@ -350,7 +350,7 @@ app.get('/api/card/:id', generalLimiter, (req, res) => {
   const result = store.findCard(req.params.id);
   if (!result) return res.status(404).json({ error: 'Card not found.' });
   const { card, admin } = result;
-  res.json({ ...card, gameId: admin.game.gameId });
+  res.json({ ...card, gameId: admin.game.gameId, playerOptions: { ...admin.game.playerOptions } });
 });
 
 // ─── QR code endpoint (admin-protected) ──────────────────────────────────────
@@ -391,7 +391,8 @@ app.post('/api/bingo', strictLimiter, async (req, res) => {
     admin.game.playedSongIds,
     markedCells,
     admin.game.currentSong ? admin.game.currentSong.id : null,
-    admin.game.playerOptions.freeSpace !== false
+    admin.game.playerOptions.freeSpace !== false,
+    admin.game.playerOptions.bingoMode || 'any-line'
   );
 
   if (!isValid) {
