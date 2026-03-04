@@ -25,7 +25,8 @@ const npTitle      = document.getElementById('np-title');
 const npArtist     = document.getElementById('np-artist');
 const playedList   = document.getElementById('played-list');
 const noSongsLi    = document.getElementById('no-songs-li');
-const markedCount  = document.getElementById('marked-count');
+const markedCount      = document.getElementById('marked-count');
+const bingoModeLabel   = document.getElementById('bingo-mode-label');
 const globalAlert  = document.getElementById('global-alert');
 const songsHistory = document.getElementById('songs-history');
 const winOverlay      = document.getElementById('win-overlay');
@@ -113,6 +114,7 @@ async function loadCard() {
     markedCells = loadMarked();
     renderGrid();
     updateMarkedCount();
+    updateModeLabel();
 
     // Join the game room so we receive real-time updates for this game
     if (card.gameId) {
@@ -361,6 +363,8 @@ function applyPlayerOptions() {
   updateHints(currentSong);
   // Marked count (freeSpace affects the +1 for FREE)
   updateMarkedCount();
+  // Bingo mode label
+  updateModeLabel();
 }
 
 /** Highlight cells whose song matches the currently playing track. */
@@ -405,6 +409,21 @@ function escHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function friendlyMode(mode) {
+  const labels = {
+    'any-line':      'Any Line',
+    'postage-stamp': 'Postage Stamp',
+    'full-board':    'Full Board',
+    'x-pattern':     'X Pattern',
+  };
+  return labels[mode] || mode || 'Any Line';
+}
+
+function updateModeLabel() {
+  if (!bingoModeLabel) return;
+  bingoModeLabel.textContent = `Mode: ${friendlyMode(playerOptions.bingoMode)}`;
 }
 
 function friendlyPattern(pattern) {
