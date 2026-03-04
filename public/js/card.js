@@ -221,30 +221,32 @@ bingoBtn.addEventListener('click', async () => {
     return { row, col };
   });
 
+  let res = null, data = null;
   try {
-    const res  = await fetch('/api/bingo', {
+    res  = await fetch('/api/bingo', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ cardId, playerName, markedCells: cells }),
     });
-    const data = await res.json();
-
-    if (!res.ok) {
-      setBingoMsg(data.error, 'error');
-      bingoBtn.disabled = false;
-      bingoBtn.textContent = 'BINGO!';
-    } else {
-      setBingoMsg(
-        `🏆 BINGO validated! You are #${data.rank}! Pattern: ${friendlyPattern(data.pattern)}`,
-        'success'
-      );
-      bingoBtn.textContent = '🏆 BINGO!';
-      if (data.rank === 1) showWinCelebration(playerName, data.cardNumber);
-    }
+    data = await res.json();
   } catch (err) {
     setBingoMsg('Network error: ' + err.message, 'error');
     bingoBtn.disabled = false;
     bingoBtn.textContent = 'BINGO!';
+    return;
+  }
+
+  if (!res.ok) {
+    setBingoMsg(data.error, 'error');
+    bingoBtn.disabled = false;
+    bingoBtn.textContent = 'BINGO!';
+  } else {
+    setBingoMsg(
+      `🏆 BINGO validated! You are #${data.rank}! Pattern: ${friendlyPattern(data.pattern)}`,
+      'success'
+    );
+    bingoBtn.textContent = '🏆 BINGO!';
+    if (data.rank === 1) showWinCelebration(playerName, data.cardNumber);
   }
 });
 
