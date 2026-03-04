@@ -589,3 +589,71 @@ describe('validateBingo – full-board mode', () => {
     expect(isValid).toBe(false);
   });
 });
+
+// ─── validateBingo – x-pattern mode ───────────────────────────────────────────
+
+describe('validateBingo – x-pattern mode', () => {
+  function makeGrid() {
+    const grid = [];
+    let idx = 1;
+    for (let r = 0; r < 5; r++) {
+      const row = [];
+      for (let c = 0; c < 5; c++) {
+        if (r === 2 && c === 2) {
+          row.push({ isFree: true, song: makeSong(25) });
+        } else {
+          row.push({ isFree: false, song: makeSong(idx++) });
+        }
+      }
+      grid.push(row);
+    }
+    return grid;
+  }
+
+  function songIdAt(grid, r, c) { return grid[r][c].song.id; }
+
+  /** Cells in both diagonals (9 unique cells – centre is shared). */
+  const DIAG_CELLS = [
+    [0,0],[1,1],[2,2],[3,3],[4,4],
+    [0,4],[1,3],[3,1],[4,0],
+  ];
+
+  test('validates both diagonals as an X', () => {
+    const grid = makeGrid();
+    const nonFreeDiag = DIAG_CELLS.filter(([r, c]) => !(r === 2 && c === 2));
+    const playedIds = new Set(nonFreeDiag.map(([r, c]) => songIdAt(grid, r, c)));
+    const marked = nonFreeDiag.map(([r, c]) => ({ row: r, col: c }));
+    const { isValid, pattern } = validateBingo(grid, playedIds, marked, null, true, 'x-pattern');
+    expect(isValid).toBe(true);
+    expect(pattern).toBe('x-pattern');
+  });
+
+  test('rejects when only one diagonal is complete', () => {
+    const grid = makeGrid();
+    // Only top-left → bottom-right diagonal
+    const cells = [[0,0],[1,1],[2,2],[3,3],[4,4]];
+    const nonFree = cells.filter(([r, c]) => !(r === 2 && c === 2));
+    const playedIds = new Set(nonFree.map(([r, c]) => songIdAt(grid, r, c)));
+    const marked = nonFree.map(([r, c]) => ({ row: r, col: c }));
+    const { isValid } = validateBingo(grid, playedIds, marked, null, true, 'x-pattern');
+    expect(isValid).toBe(false);
+  });
+
+  test('rejects a full row in x-pattern mode', () => {
+    const grid = makeGrid();
+    const playedIds = new Set([0,1,2,3,4].map((c) => songIdAt(grid, 0, c)));
+    const marked = [0,1,2,3,4].map((c) => ({ row: 0, col: c }));
+    const { isValid } = validateBingo(grid, playedIds, marked, null, true, 'x-pattern');
+    expect(isValid).toBe(false);
+  });
+
+  test('requires all 9 distinct diagonal cells to be played (with freeSpace:false)', () => {
+    const grid = makeGrid();
+    // Play all 9 diagonal cells including centre
+    const playedIds = new Set(DIAG_CELLS.map(([r, c]) => songIdAt(grid, r, c)));
+    const marked = DIAG_CELLS.map(([r, c]) => ({ row: r, col: c }));
+    const { isValid, pattern } = validateBingo(grid, playedIds, marked, null, false, 'x-pattern');
+    expect(isValid).toBe(true);
+    expect(pattern).toBe('x-pattern');
+  });
+});

@@ -28,6 +28,10 @@ const noSongsLi    = document.getElementById('no-songs-li');
 const markedCount  = document.getElementById('marked-count');
 const globalAlert  = document.getElementById('global-alert');
 const songsHistory = document.getElementById('songs-history');
+const winOverlay      = document.getElementById('win-overlay');
+const winOverlayTitle = document.getElementById('win-overlay-title');
+const winOverlaySub   = document.getElementById('win-overlay-sub');
+const winOverlayClose = document.getElementById('win-overlay-close');
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const cardId = window.location.pathname.split('/').pop();
@@ -233,6 +237,7 @@ bingoBtn.addEventListener('click', async () => {
         'success'
       );
       bingoBtn.textContent = '🏆 BINGO!';
+      if (data.rank === 1) showWinCelebration(playerName, data.cardNumber);
     }
   } catch (err) {
     setBingoMsg('Network error: ' + err.message, 'error');
@@ -283,7 +288,12 @@ socket.on('game:ended', () => {
   nowPlaying.style.display = 'none';
   updateHints(null);
 });
-socket.on('game:reset',  () => { updateGameStatus('idle'); });
+socket.on('game:reset', () => {
+  updateGameStatus('idle');
+  markedCells = new Set();
+  saveMarked();
+  if (card) loadCard();
+});
 
 socket.on('song:playing', ({ song, previousSong }) => {
   if (previousSong && !playedSongIds.has(previousSong.id)) addPlayedSong(previousSong);
@@ -300,11 +310,19 @@ socket.on('song:paused', (data = {}) => {
 });
 
 socket.on('bingo:claimed', (w) => {
-  if (w.cardId === cardId) return; // already handled locally
-  setAlert(
-    `🏆 <strong>${escHtml(w.playerName)}</strong> got BINGO on Card #${w.cardNumber}!`,
-    w.rank === 1 ? 'success' : 'info'
-  );
+  // Rank-1 winner always gets the celebration overlay (even on this player's own card,
+  // since the local BINGO handler already fires the overlay only for rank 1 — here
+  // the socket event from other players also triggers it for everyone else in the room).
+  if (w.rank === 1) {
+    showWinCelebration(w.playerName, w.cardNumber);
+  } else if (w.cardId !== cardId) {
+    // For later-rank wins, show a quieter alert only to other players' cards
+    // (this card's own claim is already surfaced via the BINGO button response).
+    setAlert(
+      `🏆 <strong>${escHtml(w.playerName)}</strong> got BINGO on Card #${w.cardNumber}!`,
+      'info'
+    );
+  }
 });
 
 socket.on('game:options', (opts) => {
@@ -354,7 +372,11 @@ function updateHints(song) {
     const c = parseInt(el.dataset.col, 10);
     if (isNaN(r) || isNaN(c)) return;
     const cell = card.grid[r][c];
-    if (!cell.isFree && cell.song && cell.song.id === song.id) {
+    // Add a hint for any cell whose song matches the playing track.
+    // The centre cell has isFree:true in the grid, but when freeSpace is
+    // disabled it is rendered as a regular markable cell and should still
+    // receive a hint, so we also check !playerOptions.freeSpace.
+    if (cell.song && cell.song.id === song.id && (!cell.isFree || !playerOptions.freeSpace)) {
       el.classList.add('hint');
     }
   });
@@ -402,5 +424,25 @@ function friendlyPattern(pattern) {
   if (pattern === 'postage-stamp-bl') return 'Postage Stamp (bottom-left corner)';
   if (pattern === 'postage-stamp-br') return 'Postage Stamp (bottom-right corner)';
   if (pattern === 'full-board') return 'Full Board (Blackout!)';
+  if (pattern === 'x-pattern') return 'X Pattern (both diagonals)';
   return pattern;
 }
+
+/** Show a full-board celebration overlay for the first-place winner. */
+function showWinCelebration(winnerName, cardNumber) {
+  winOverlayTitle.textContent = `🎉 ${winnerName} Wins!`;
+  winOverlaySub.textContent   = `Card #${cardNumber} got BINGO first!`;
+  winOverlay.classList.add('visible');
+  // Stagger a flash animation across every grid cell
+  document.querySelectorAll('.bingo-cell').forEach((el, i) => {
+    el.classList.remove('win-flash');
+    setTimeout(() => el.classList.add('win-flash'), i * 40);
+  });
+}
+
+winOverlayClose.addEventListener('click', () => {
+  winOverlay.classList.remove('visible');
+});
+winOverlay.addEventListener('click', (e) => {
+  if (e.target === winOverlay) winOverlay.classList.remove('visible');
+});

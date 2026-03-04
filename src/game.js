@@ -178,7 +178,7 @@ class GameState {
         this.playerOptions[key] = opts[key];
       }
     }
-    const validModes = ['any-line', 'postage-stamp', 'full-board'];
+    const validModes = ['any-line', 'postage-stamp', 'full-board', 'x-pattern'];
     if (typeof opts.bingoMode === 'string' && validModes.includes(opts.bingoMode)) {
       this.playerOptions.bingoMode = opts.bingoMode;
     }
