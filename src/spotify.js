@@ -157,7 +157,7 @@ class SpotifyClient {
         limit,
         offset,
         fields:
-          'total,items(track(id,name,artists,album(name,images),duration_ms,preview_url))',
+          'total,items(track(id,name,artists,album(name,images),duration_ms,preview_url,is_playable,restrictions))',
       });
 
       const body = data.body;
@@ -166,6 +166,7 @@ class SpotifyClient {
       for (const item of body.items) {
         const track = item.track;
         if (!track || !track.id) continue; // skip local / null tracks
+        if (track.is_playable === false) continue; // skip tracks blocked in the user's market
 
         songs.push({
           id: track.id,

@@ -210,6 +210,14 @@ function validateBingo(grid, playedSongIds, markedCells, currentSongId = null, f
     return { isValid: allValid, pattern: allValid ? 'full-board' : null };
   }
 
+  if (bingoMode === 'x-pattern') {
+    // Both diagonals must be complete, forming an X across the board.
+    const diag1 = [0, 1, 2, 3, 4].every((i) => valid[i][i]);
+    const diag2 = [0, 1, 2, 3, 4].every((i) => valid[i][4 - i]);
+    const isValid = diag1 && diag2;
+    return { isValid, pattern: isValid ? 'x-pattern' : null };
+  }
+
   // Default: 'any-line' – any complete row, column, or diagonal.
 
   // Check rows
