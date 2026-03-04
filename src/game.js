@@ -128,6 +128,8 @@ class GameState {
     this.winners = [];
     this.startedAt = null;
     this.endedAt = null;
+    // bingoMode resets to the default on each new game round.
+    this.playerOptions.bingoMode = 'any-line';
   }
 
   // ─── Song tracking ────────────────────────────────────────────────────────
