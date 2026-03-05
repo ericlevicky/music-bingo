@@ -29,6 +29,10 @@
  * API (public):
  *   GET  /api/card/:id               Get card data (for player page)
  *   GET  /api/qr                     QR code PNG for the player join page (admin-protected)
+ *   GET  /api/qr/:gameId             QR code PNG by game ID (public – game ID is not secret)
+ *
+ * Pages (public):
+ *   GET  /qr                         Full-screen QR code display page for players to scan
  *   POST /api/bingo                  Submit a bingo claim
  */
 
@@ -151,6 +155,10 @@ app.get('/admin', generalLimiter, ensureAdmin, (req, res) =>
 
 app.get('/card/:id', generalLimiter, (req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'card.html'))
+);
+
+app.get('/qr', generalLimiter, (req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'qr.html'))
 );
 
 // ─── Health check (used by Render to verify the service is alive) ─────────────
@@ -410,6 +418,21 @@ app.get('/api/qr', generalLimiter, ensureAdmin, async (req, res) => {
   const joinUrl = `${req.protocol}://${req.get('host')}/?game=${req.user.game.gameId}`;
   try {
     const png = await QRCode.toBuffer(joinUrl, { type: 'png', width: 300, margin: 2 });
+    res.set('Content-Type', 'image/png').send(png);
+  } catch (err) {
+    console.error('QR code generation failed:', err);
+    res.status(500).json({ error: 'Failed to generate QR code.' });
+  }
+});
+
+// ─── Public QR code endpoint (by game ID – game ID is not sensitive) ─────────
+
+app.get('/api/qr/:gameId', generalLimiter, async (req, res) => {
+  const { gameId } = req.params;
+  if (!gameId) return res.status(400).json({ error: 'gameId required.' });
+  const joinUrl = `${req.protocol}://${req.get('host')}/?game=${encodeURIComponent(gameId)}`;
+  try {
+    const png = await QRCode.toBuffer(joinUrl, { type: 'png', width: 400, margin: 2 });
     res.set('Content-Type', 'image/png').send(png);
   } catch (err) {
     console.error('QR code generation failed:', err);

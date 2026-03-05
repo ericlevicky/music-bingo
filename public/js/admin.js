@@ -62,6 +62,7 @@ async function loadProfile() {
 
     updateSpotifyBadge(data.spotifyConnected);
     updateGameStatus(data.game.status);
+    updateQrDisplayLink();
 
     // Restore state from existing game
     if (data.game.playedSongs && data.game.playedSongs.length) {
@@ -240,7 +241,14 @@ endBtn.addEventListener('click', async () => {
 });
 
 resetBtn.addEventListener('click', async () => {
-  if (!confirm('Reset game progress? Played songs and winners will be cleared, and new card boards will be generated for each player link.')) return;
+  if (!confirm(
+    'Reset game progress?\n\n' +
+    '• Played songs and winners will be cleared\n' +
+    '• Player links stay valid – existing card boards are kept\n' +
+    '• Players\' marked cells will be cleared\n' +
+    '• Bingo mode resets to "Any Line"\n\n' +
+    'Note: generating new cards (Step 2) creates entirely new boards and invalidates old player links.'
+  )) return;
   await fetch('/api/game/reset', { method: 'POST' });
   playedList.innerHTML  = '';
   playedList.style.display = 'none';
@@ -249,7 +257,7 @@ resetBtn.addEventListener('click', async () => {
   winnersTable.style.display = 'none';
   noWinnersMsg.style.display = 'block';
   nowPlaying.style.display = 'none';
-  setAlert(gameMsg, 'Game reset.', 'info');
+  setAlert(gameMsg, 'Game reset. Player links are still valid — boards are unchanged, marked cells cleared.', 'info');
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -343,6 +351,7 @@ optBingoMode.addEventListener('change', savePlayerOptions);
 socket.on('game:state', (state) => {
   currentGameId = state.gameId;
   updateGameStatus(state.status);
+  updateQrDisplayLink();
   if (state.currentSong) {
     npArt.src = state.currentSong.albumArt || '';
     npTitle.textContent  = state.currentSong.name;
@@ -397,6 +406,7 @@ const qrImg        = document.getElementById('qr-img');
 const qrUrlEl      = document.getElementById('qr-url');
 const qrClose      = document.getElementById('qr-close');
 const gameQrBtn    = document.getElementById('game-qr-btn');
+const qrDisplayLink = document.getElementById('qr-display-link');
 
 function openQrModal() {
   if (!currentGameId) {
@@ -406,6 +416,12 @@ function openQrModal() {
   qrImg.src = '/api/qr';
   qrUrlEl.textContent = window.location.origin + '/?game=' + currentGameId;
   qrModal.style.display = 'flex';
+}
+
+function updateQrDisplayLink() {
+  if (currentGameId) {
+    qrDisplayLink.href = `/qr?game=${encodeURIComponent(currentGameId)}`;
+  }
 }
 
 gameQrBtn.addEventListener('click', openQrModal);
