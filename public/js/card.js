@@ -246,7 +246,7 @@ bingoBtn.addEventListener('click', async () => {
       'success'
     );
     bingoBtn.textContent = '🏆 BINGO!';
-    if (data.rank === 1) showWinCelebration(playerName, data.cardNumber);
+    showWinCelebration(playerName, data.cardNumber, data.rank);
   }
 });
 
@@ -282,7 +282,7 @@ socket.on('game:started', (state = {}) => {
   playedSongIds = new Set();
   markedCells   = new Set();
   saveMarked();
-  if (card) renderGrid();
+  applyPlayerOptions();
   setAlert('', '');
 });
 
@@ -314,19 +314,7 @@ socket.on('song:paused', (data = {}) => {
 });
 
 socket.on('bingo:claimed', (w) => {
-  // Rank-1 winner always gets the celebration overlay (even on this player's own card,
-  // since the local BINGO handler already fires the overlay only for rank 1 — here
-  // the socket event from other players also triggers it for everyone else in the room).
-  if (w.rank === 1) {
-    showWinCelebration(w.playerName, w.cardNumber);
-  } else if (w.cardId !== cardId) {
-    // For later-rank wins, show a quieter alert only to other players' cards
-    // (this card's own claim is already surfaced via the BINGO button response).
-    setAlert(
-      `🏆 <strong>${escHtml(w.playerName)}</strong> got BINGO on Card #${w.cardNumber}!`,
-      'info'
-    );
-  }
+  showWinCelebration(w.playerName, w.cardNumber, w.rank);
 });
 
 socket.on('game:options', (opts) => {
@@ -345,6 +333,22 @@ function showNowPlaying(song) {
 
 /** Apply current playerOptions to all visible elements. */
 function applyPlayerOptions() {
+  // When free space is re-enabled, drop the center cell from markedCells so it
+  // isn't double-counted (the FREE square is always worth +1 via updateMarkedCount).
+  // Note: if the player had previously marked the center cell while freeSpace was
+  // disabled, that mark is intentionally cleared here — the cell is now FREE and
+  // automatically valid, so the explicit mark is no longer meaningful.
+  if (card) {
+    const freeRow = Math.floor(card.grid.length / 2);
+    const freeCol = Math.floor((card.grid[0] || []).length / 2);
+    if (playerOptions.freeSpace !== false) {
+      // Re-enabled: remove any manual mark so the cell isn't double-counted.
+      markedCells.delete(`${freeRow},${freeCol}`);
+      saveMarked();
+    }
+    // When freeSpace becomes disabled the center cell renders as a regular
+    // markable cell (starting unmarked). No change to markedCells is needed.
+  }
   // Song history
   if (songsHistory) {
     if (!playerOptions.showSongHistory) {
@@ -449,10 +453,17 @@ function friendlyPattern(pattern) {
   return pattern;
 }
 
-/** Show a full-board celebration overlay for the first-place winner. */
-function showWinCelebration(winnerName, cardNumber) {
-  winOverlayTitle.textContent = `🎉 ${winnerName} Wins!`;
-  winOverlaySub.textContent   = `Card #${cardNumber} got BINGO first!`;
+/** Show a full-board celebration overlay for any winner. */
+function showWinCelebration(winnerName, cardNumber, rank = 1) {
+  if (rank === 1) {
+    winOverlayTitle.textContent = `🎉 ${winnerName} Wins!`;
+    winOverlaySub.textContent   = `Card #${cardNumber} got BINGO first!`;
+    winOverlay.dataset.rank = '1';
+  } else {
+    winOverlayTitle.textContent = `🏆 ${winnerName} got BINGO!`;
+    winOverlaySub.textContent   = `Card #${cardNumber} is #${rank}!`;
+    winOverlay.dataset.rank = String(rank);
+  }
   winOverlay.classList.add('visible');
   // Stagger a flash animation across every grid cell
   document.querySelectorAll('.bingo-cell').forEach((el, i) => {

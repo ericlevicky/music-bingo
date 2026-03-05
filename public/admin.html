@@ -47,6 +47,10 @@
     <!-- ── Step 2: Generate cards ───────────────────────────────── -->
     <div class="section card">
       <h2>2 · Generate Bingo Cards</h2>
+      <p style="margin-bottom:1rem; font-size:.85rem;">
+        ⚠️ <strong>Generating new cards invalidates all existing player links.</strong>
+        Use <em>Reset</em> (Step 4) to replay the same boards without re-sending links.
+      </p>
 
       <!-- Playlist picker -->
       <div class="form-group section" style="margin-bottom:1rem;">
@@ -91,6 +95,7 @@
         <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:.75rem; flex-wrap:wrap;">
           <p style="margin:0; font-size:.9rem;">Share these links with your players:</p>
           <button class="btn btn-grey" id="game-qr-btn" style="padding:.3rem .85rem; font-size:.85rem;" aria-label="Show game QR code">🔲 Game QR Code</button>
+          <a id="qr-display-link" href="#" target="_blank" class="btn btn-grey" style="padding:.3rem .85rem; font-size:.85rem;" aria-label="Open QR code on a separate page">📺 QR Display Page</a>
         </div>
         <div id="card-list" class="card-list"></div>
       </div>

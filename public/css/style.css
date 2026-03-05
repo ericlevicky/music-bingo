@@ -390,6 +390,38 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
   #bingo-btn { font-size: 1.1rem; }
 }
 
+/* ─── Landscape / wider-viewport optimisation ────────────────────────────── */
+/*
+ * On wide or landscape viewports (tablets, laptops) the bingo grid can grow
+ * so tall that players have to scroll past the BINGO button.  We cap the
+ * grid's width to the available viewport height so the full card always fits
+ * on screen without scrolling.
+ */
+@media (orientation: landscape) and (min-width: 600px) {
+  /* Constrain grid width to available vertical space so aspect-ratio:1 cells
+     don't exceed the viewport height. Subtract ~220px for nav + status bar +
+     BINGO button + padding. */
+  .bingo-grid,
+  .bingo-header {
+    max-width: min(100%, calc(100vh - 220px));
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Phone landscape – very compact UI */
+@media (orientation: landscape) and (max-height: 500px) {
+  nav { padding: .4rem 1rem; }
+  .bingo-cell { font-size: .5rem; padding: .15rem; }
+  .cell-title-sm .cell-title { font-size: .43rem; }
+  .cell-title-xs .cell-title { font-size: .37rem; }
+  #bingo-btn { font-size: 1rem; padding: .55rem 1.75rem; margin: .75rem auto; }
+  .bingo-header span { font-size: 1.1rem; }
+  .container { padding-top: .5rem !important; padding-bottom: 1.5rem !important; }
+  #now-playing { padding: .5rem .75rem; margin-bottom: .5rem; }
+  #now-playing img { width: 40px; height: 40px; }
+}
+
 /* ─── Winner celebration overlay ─────────────────────────────────────────── */
 .win-overlay {
   position: fixed;
@@ -420,6 +452,8 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
 }
 .win-overlay-trophy { font-size: 5rem; display: block; margin-bottom: .5rem; }
 .win-overlay-title  { font-size: 2rem; font-weight: 900; color: var(--gold); margin-bottom: .5rem; }
+/* Secondary rank wins use a different accent colour */
+.win-overlay[data-rank]:not([data-rank="1"]) .win-overlay-title { color: var(--green); }
 .win-overlay-sub    { font-size: 1.1rem; color: var(--text-m); margin-bottom: 1.5rem; }
 .win-overlay-close  {
   background: var(--gold);
@@ -432,6 +466,7 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
   cursor: pointer;
   transition: transform var(--trans);
 }
+.win-overlay[data-rank]:not([data-rank="1"]) .win-overlay-close { background: var(--green); }
 .win-overlay-close:hover { transform: scale(1.05); }
 
 /* ─── Cell win flash ─────────────────────────────────────────────────────── */
