@@ -181,7 +181,7 @@ Render's free tier normally spins a service down after 15 minutes of inactivity,
 #### A · Create the Render service
 
 1. Sign up / log in at <https://render.com>
-2. Click **New → Blueprint** and connect your GitHub repo (`ericlevicky/music-bingo`)
+2. Click **New → Blueprint** and connect your GitHub repo (`<your-github-username>/music-bingo`)
 3. Render reads `render.yaml` and creates the **music-bingo** web service automatically
 4. Note the public URL Render assigns (e.g. `https://music-bingo-xxxx.onrender.com`)
 
