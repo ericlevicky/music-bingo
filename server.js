@@ -40,6 +40,32 @@
 
 require('dotenv').config();
 
+// ─── Startup security checks ──────────────────────────────────────────────────
+//
+// Refuse to start in production with missing secrets that could allow
+// session forgery or OAuth spoofing.
+if (process.env.NODE_ENV === 'production') {
+  const missing = [];
+  if (!process.env.SESSION_SECRET)      missing.push('SESSION_SECRET');
+  if (!process.env.GOOGLE_CLIENT_ID)    missing.push('GOOGLE_CLIENT_ID');
+  if (!process.env.GOOGLE_CLIENT_SECRET) missing.push('GOOGLE_CLIENT_SECRET');
+  if (!process.env.SPOTIFY_CLIENT_ID)   missing.push('SPOTIFY_CLIENT_ID');
+  if (!process.env.SPOTIFY_CLIENT_SECRET) missing.push('SPOTIFY_CLIENT_SECRET');
+  if (missing.length > 0) {
+    console.error(
+      '[startup] FATAL: The following required environment variables are not set:\n' +
+      missing.map(v => `  - ${v}`).join('\n') + '\n' +
+      'Set them before starting the server in production. See .env.example for details.'
+    );
+    process.exit(1);
+  }
+} else if (!process.env.SESSION_SECRET) {
+  console.warn(
+    '[startup] WARNING: SESSION_SECRET is not set. ' +
+    'Using a hardcoded default is insecure — set SESSION_SECRET in your .env file before deploying.'
+  );
+}
+
 const path    = require('path');
 const http    = require('http');
 const crypto  = require('crypto');
