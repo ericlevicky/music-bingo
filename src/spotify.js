@@ -203,7 +203,7 @@ class SpotifyClient {
 
     const songs = await this.getPlaylistSongs(sourcePlaylistId);
     if (songs.length < 24) {
-      throw new Error(`Source playlist only has ${songs.length} tracks. At least 24 are required.`);
+      throw new Error(`Source playlist only has ${songs.length} songs. At least 24 are required.`);
     }
 
     const count = Math.min(Math.max(1, songCount), songs.length);
