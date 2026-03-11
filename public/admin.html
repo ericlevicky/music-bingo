@@ -70,17 +70,16 @@
       <div id="trim-playlist-section" style="display:none; background:var(--surface2); border-radius:var(--radius); padding:1rem; margin-bottom:1rem;">
         <h3 style="margin-bottom:.6rem; font-size:1rem;">✂️ Create Trimmed Playlist</h3>
         <p style="font-size:.82rem; margin-bottom:.75rem;">
-          Create a new Spotify playlist from the selected one with a specific number of randomly-picked songs.
-          The new playlist will be saved to your Spotify account and selected automatically.
+          Create a new Spotify playlist by randomly picking songs from the selected one.
+          The original playlist is never modified. The new playlist will be saved to your Spotify account and selected automatically.
         </p>
+        <div style="font-size:.82rem; color:var(--text-m); margin-bottom:.75rem;">
+          New playlist name: <span id="trim-playlist-name-preview" style="color:var(--text); font-style:italic;"></span>
+        </div>
         <div class="form-row" style="align-items:flex-end; gap:.75rem; flex-wrap:wrap;">
           <div class="form-group" style="max-width:200px;">
             <label for="trim-song-count">Number of songs (24–500)</label>
             <input type="number" id="trim-song-count" value="30" min="24" max="500" />
-          </div>
-          <div class="form-group" style="flex:2; min-width:180px;">
-            <label for="trim-playlist-name">New playlist name (optional)</label>
-            <input type="text" id="trim-playlist-name" placeholder="Music Bingo – 30 songs" />
           </div>
           <button class="btn btn-grey" id="trim-btn" style="flex-shrink:0;">Create &amp; Select</button>
         </div>

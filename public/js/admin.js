@@ -12,8 +12,8 @@ const playlistSelect    = document.getElementById('playlist-select');
 const refreshBtn        = document.getElementById('refresh-playlists-btn');
 const playlistInfo      = document.getElementById('playlist-info');
 const trimPlaylistSection = document.getElementById('trim-playlist-section');
+const trimPlaylistNamePreview = document.getElementById('trim-playlist-name-preview');
 const trimSongCount     = document.getElementById('trim-song-count');
-const trimPlaylistName  = document.getElementById('trim-playlist-name');
 const trimBtn           = document.getElementById('trim-btn');
 const trimMsg           = document.getElementById('trim-msg');
 const setupBtn          = document.getElementById('setup-btn');
@@ -144,7 +144,7 @@ async function loadPlaylists() {
       ? '<option value="">No playlists found on your Spotify account</option>'
       : '<option value="">— Select a playlist —</option>' +
         playlists.map(p =>
-          `<option value="${escAttr(p.id)}">${escHtml(p.name)} (${p.trackCount} tracks)</option>`
+          `<option value="${escAttr(p.id)}" data-name="${escAttr(p.name)}">${escHtml(p.name)} (${p.trackCount} tracks)</option>`
         ).join('');
   } catch (err) {
     setAlert(setupMsg, 'Failed to load playlists: ' + err.message, 'error');
@@ -164,7 +164,18 @@ playlistSelect.addEventListener('change', () => {
   }
   playlistInfo.textContent = `Selected: "${opt.text}"`;
   trimPlaylistSection.style.display = 'block';
+  // Show auto-generated name preview
+  const sourceName = opt.dataset.name || opt.text;
+  trimPlaylistNamePreview.textContent = buildTrimmedPlaylistName(sourceName);
 });
+
+/** Build the auto-generated playlist name, truncated to fit Spotify's 100-char limit. */
+function buildTrimmedPlaylistName(sourceName) {
+  const SUFFIX = ' for music-bingo';
+  const MAX_LEN = 100;
+  const trimmedSource = sourceName.slice(0, MAX_LEN - SUFFIX.length);
+  return trimmedSource + SUFFIX;
+}
 
 // ─── Trimmed playlist creator ─────────────────────────────────────────────────
 trimBtn.addEventListener('click', async () => {
@@ -179,6 +190,10 @@ trimBtn.addEventListener('click', async () => {
     return;
   }
 
+  const opt = playlistSelect.options[playlistSelect.selectedIndex];
+  const sourceName = opt ? (opt.dataset.name || opt.text) : '';
+  const newName = buildTrimmedPlaylistName(sourceName);
+
   trimBtn.disabled = true;
   trimBtn.textContent = 'Creating…';
   setAlert(trimMsg, '', '');
@@ -190,7 +205,7 @@ trimBtn.addEventListener('click', async () => {
       body: JSON.stringify({
         sourcePlaylistId,
         songCount,
-        name: trimPlaylistName.value.trim() || undefined,
+        name: newName,
       }),
     });
     const data = await res.json();
