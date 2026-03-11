@@ -94,6 +94,14 @@ class AdminStore {
   }
 
   /**
+   * Remove a single card from the global index.
+   * @param {string} cardId
+   */
+  deindexCard(cardId) {
+    this._cardIndex.delete(cardId);
+  }
+
+  /**
    * Remove all cards for an admin from the global index
    * (called on game reset so stale card IDs don't linger).
    * @param {string} googleId

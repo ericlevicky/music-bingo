@@ -63,6 +63,48 @@ describe('GameState.addCard()', () => {
   });
 });
 
+describe('GameState.removeCard()', () => {
+  test('removes a card by id and returns true', () => {
+    const game = new GameState();
+    game.setCards(makeCards(3), makeSongs(24), 'playlist-1');
+
+    const removed = game.removeCard('card-1');
+
+    expect(removed).toBe(true);
+    expect(game.cards).toHaveLength(2);
+    expect(game.getCardById('card-1')).toBeNull();
+  });
+
+  test('returns false when card id does not exist', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+
+    const removed = game.removeCard('does-not-exist');
+
+    expect(removed).toBe(false);
+    expect(game.cards).toHaveLength(2);
+  });
+
+  test('renumbers remaining cards contiguously after removal', () => {
+    const game = new GameState();
+    game.setCards(makeCards(3), makeSongs(24), 'playlist-1');
+
+    game.removeCard('card-0'); // remove card #1
+
+    expect(game.cards[0].number).toBe(1);
+    expect(game.cards[1].number).toBe(2);
+  });
+
+  test('does not change the gameId when removing a card', () => {
+    const game = new GameState();
+    game.setCards(makeCards(3), makeSongs(24), 'playlist-1');
+    const gameId = game.gameId;
+
+    game.removeCard('card-0');
+
+    expect(game.gameId).toBe(gameId);
+  });
+});
 
 describe('GameState.end()', () => {
   test('sets status to ended', () => {

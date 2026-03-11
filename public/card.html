@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bingo Card – Music Bingo</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -47,7 +48,19 @@
 
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
         <div>
-          <h2 id="card-heading"><span id="card-number"></span></h2>
+          <h2 id="card-heading">
+            <span id="card-number"></span>
+            <button id="rename-btn" title="Change your name" style="background:none; border:none; cursor:pointer; font-size:.75rem; color:var(--text-m); margin-left:.5rem; padding:.2rem .4rem; border-radius:6px;">✏️</button>
+          </h2>
+          <!-- Inline rename form (hidden by default) -->
+          <div id="rename-form" style="display:none; margin-top:.4rem;">
+            <div class="form-row" style="gap:.5rem; flex-wrap:nowrap;">
+              <input type="text" id="rename-input" placeholder="New name…" style="max-width:180px; font-size:.85rem;" autocomplete="off" />
+              <button class="btn btn-green" id="rename-save-btn" style="padding:.35rem .85rem; font-size:.8rem;">Save</button>
+              <button class="btn btn-grey" id="rename-cancel-btn" style="padding:.35rem .7rem; font-size:.8rem;">✕</button>
+            </div>
+            <div id="rename-msg" style="margin-top:.3rem;"></div>
+          </div>
           <span id="game-status" class="status-pill status-idle">Waiting for game…</span>
           <span id="bingo-mode-label" class="status-pill status-idle" style="margin-left:.4rem;"></span>
         </div>

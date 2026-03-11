@@ -223,19 +223,37 @@ input:focus { border-color: var(--green); }
 .cell-title-xs .cell-title { font-size: .5rem; }
 
 /* ─── Card list (admin) ──────────────────────────────────────────────────── */
-.card-list { display: flex; flex-wrap: wrap; gap: .6rem; }
-.card-list-item { display: inline-flex; align-items: center; gap: .3rem; }
-.card-contact-label { color: var(--text-m); font-size: .75rem; }
-.card-list a {
+.card-list { display: flex; flex-direction: column; gap: .4rem; }
+.player-list-item {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
   background: var(--surface2);
-  border-radius: 50px;
-  padding: .35rem .85rem;
-  font-size: .85rem;
-  color: var(--text-m);
-  border: 1px solid #444;
-  transition: background var(--trans), color var(--trans);
+  border-radius: var(--radius);
+  padding: .45rem .75rem;
+  font-size: .88rem;
 }
-.card-list a:hover { background: var(--green); color: #000; text-decoration: none; }
+.player-link {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  color: var(--text);
+  text-decoration: none;
+  flex: 1;
+  min-width: 0;
+}
+.player-link:hover { color: var(--green); }
+.player-num {
+  color: var(--text-m);
+  font-size: .78rem;
+  flex-shrink: 0;
+}
+.player-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-contact-label { color: var(--text-m); font-size: .75rem; }
 .card-list .share-btn {
   padding: .3rem;
   min-width: 28px;
