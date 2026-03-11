@@ -380,6 +380,81 @@ app.get('/api/cards', generalLimiter, ensureAdmin, (req, res) => {
   );
 });
 
+/** Admin kicks a player: removes their card and notifies them. */
+app.delete('/api/cards/:id', strictLimiter, ensureAdmin, (req, res) => {
+  const { id } = req.params;
+  const card = req.user.game.getCardById(id);
+  if (!card) return res.status(404).json({ error: 'Card not found.' });
+
+  req.user.game.removeCard(id);
+  store.deindexCard(id);
+
+  if (req.user.game.gameId) {
+    io.to(`game:${req.user.game.gameId}`).emit('player:kicked', { cardId: id });
+  }
+  res.json({ message: 'Player removed.' });
+});
+
+/**
+ * Set up a game link from a playlist without pre-creating cards.
+ * Cards are created on-demand when players join via the link.
+ */
+app.post('/api/game/setup', strictLimiter, ensureAdmin, ensureSpotify, async (req, res) => {
+  const { playlistId } = req.body;
+  if (!playlistId) {
+    return res.status(400).json({ error: 'playlistId is required.' });
+  }
+  const pid = extractPlaylistId(playlistId);
+  if (!pid) {
+    return res.status(400).json({ error: 'Invalid Spotify playlist ID.' });
+  }
+  try {
+    const songs = await req.user.spotifyClient.getPlaylistSongs(pid);
+    if (songs.length < 24) {
+      return res.status(400).json({
+        error: `Playlist only has ${songs.length} tracks. At least 24 are required.`,
+      });
+    }
+    // Deindex old cards and reset before creating a fresh game link.
+    store.deindexCards(req.user.googleId);
+    req.user.game.setCards([], songs, pid);
+
+    const joinUrl = `${req.protocol}://${req.get('host')}/?game=${req.user.game.gameId}`;
+    res.json({
+      message: `Game link created with ${songs.length} songs.`,
+      gameId: req.user.game.gameId,
+      songCount: songs.length,
+      joinUrl,
+    });
+  } catch (err) {
+    console.error('Game setup error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** Create a new Spotify playlist from an existing one with a trimmed song count. */
+app.post('/api/playlists/create-trimmed', strictLimiter, ensureAdmin, ensureSpotify, async (req, res) => {
+  const { sourcePlaylistId, songCount, name } = req.body;
+  if (!sourcePlaylistId) {
+    return res.status(400).json({ error: 'sourcePlaylistId is required.' });
+  }
+  const pid = extractPlaylistId(sourcePlaylistId);
+  if (!pid) {
+    return res.status(400).json({ error: 'Invalid Spotify playlist ID.' });
+  }
+  const count = parseInt(songCount, 10);
+  if (!count || count < 24 || count > 500) {
+    return res.status(400).json({ error: 'songCount must be between 24 and 500.' });
+  }
+  try {
+    const playlist = await req.user.spotifyClient.createPlaylistFromPlaylist(pid, count, name);
+    res.json(playlist);
+  } catch (err) {
+    console.error('Create trimmed playlist error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/game/start', strictLimiter, ensureAdmin, (req, res) => {
   try {
     req.user.game.start();
@@ -435,11 +510,36 @@ app.get('/api/card/:id', generalLimiter, (req, res) => {
   res.json({ ...card, gameId: admin.game.gameId, playerOptions: { ...admin.game.playerOptions } });
 });
 
+/** Player renames themselves; broadcast to admin. */
+app.patch('/api/card/:id/rename', strictLimiter, (req, res) => {
+  const result = store.findCard(req.params.id);
+  if (!result) return res.status(404).json({ error: 'Card not found.' });
+
+  const { playerName } = req.body;
+  if (!playerName || typeof playerName !== 'string') {
+    return res.status(400).json({ error: 'playerName is required.' });
+  }
+  const name = playerName.trim().slice(0, MAX_PLAYER_NAME_LENGTH);
+  if (!name) return res.status(400).json({ error: 'playerName cannot be empty.' });
+
+  const { card, admin } = result;
+  card.contact = { type: 'name', value: name };
+
+  if (admin.game.gameId) {
+    io.to(`game:${admin.game.gameId}`).emit('player:renamed', {
+      cardId: card.id,
+      number: card.number,
+      playerName: name,
+    });
+  }
+  res.json({ message: 'Name updated.' });
+});
+
 // ─── QR code endpoint (admin-protected) ──────────────────────────────────────
 
 app.get('/api/qr', generalLimiter, ensureAdmin, async (req, res) => {
   if (!req.user.game.gameId) {
-    return res.status(400).json({ error: 'Generate bingo cards before showing the QR code.' });
+    return res.status(400).json({ error: 'Set up a game before showing the QR code.' });
   }
   const joinUrl = `${req.protocol}://${req.get('host')}/?game=${req.user.game.gameId}`;
   try {

@@ -92,6 +92,20 @@ class GameState {
     this.cards.push(card);
   }
 
+  /**
+   * Remove a card by ID (e.g. admin kicked the player).
+   * @param {string} cardId
+   * @returns {boolean}  true if a card was removed.
+   */
+  removeCard(cardId) {
+    const idx = this.cards.findIndex((c) => c.id === cardId);
+    if (idx === -1) return false;
+    this.cards.splice(idx, 1);
+    // Renumber remaining cards to keep numbers contiguous.
+    this.cards.forEach((c, i) => { c.number = i + 1; });
+    return true;
+  }
+
   getCardById(id) {
     return this.cards.find((c) => c.id === id) || null;
   }

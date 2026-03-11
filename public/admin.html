@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin – Music Bingo</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -44,12 +45,11 @@
       </a>
     </div>
 
-    <!-- ── Step 2: Generate cards ───────────────────────────────── -->
+    <!-- ── Step 2: Game Setup ───────────────────────────────────── -->
     <div class="section card">
-      <h2>2 · Generate Bingo Cards</h2>
+      <h2>2 · Game Setup</h2>
       <p style="margin-bottom:1rem; font-size:.85rem;">
-        ⚠️ <strong>Generating new cards invalidates all existing player links.</strong>
-        Use <em>Reset</em> (Step 4) to replay the same boards without re-sending links.
+        Select a playlist and generate a game link. Players join by scanning the QR code or opening the link — no pre-assigning required.
       </p>
 
       <!-- Playlist picker -->
@@ -66,36 +66,85 @@
         <div id="playlist-info" style="font-size:.82rem; color:var(--text-m); margin-top:.4rem;"></div>
       </div>
 
-      <!-- Contacts -->
-      <div class="form-group section" style="margin-bottom:1rem;">
-        <label for="contacts-input">
-          Contacts (email addresses or phone numbers, one per line)
-        </label>
-        <textarea id="contacts-input" rows="6"
-          placeholder="john@example.com&#10;jane@example.com&#10;+1 555 000 1234"
-          style="width:100%; padding:.6rem .85rem; background:var(--surface2);
-            border:1.5px solid #444; border-radius:var(--radius); color:var(--text);
-            font-size:.9rem; resize:vertical; outline:none; font-family:inherit;"></textarea>
+      <!-- Trimmed playlist creator -->
+      <div id="trim-playlist-section" style="display:none; background:var(--surface2); border-radius:var(--radius); padding:1rem; margin-bottom:1rem;">
+        <h3 style="margin-bottom:.6rem; font-size:1rem;">✂️ Create Trimmed Playlist</h3>
+        <p style="font-size:.82rem; margin-bottom:.75rem;">
+          Create a new Spotify playlist from the selected one with a specific number of randomly-picked songs.
+          The new playlist will be saved to your Spotify account and selected automatically.
+        </p>
+        <div class="form-row" style="align-items:flex-end; gap:.75rem; flex-wrap:wrap;">
+          <div class="form-group" style="max-width:200px;">
+            <label for="trim-song-count">Number of songs (24–200)</label>
+            <input type="number" id="trim-song-count" value="30" min="24" max="200" />
+          </div>
+          <div class="form-group" style="flex:2; min-width:180px;">
+            <label for="trim-playlist-name">New playlist name (optional)</label>
+            <input type="text" id="trim-playlist-name" placeholder="Music Bingo – 30 songs" />
+          </div>
+          <button class="btn btn-grey" id="trim-btn" style="flex-shrink:0;">Create &amp; Select</button>
+        </div>
+        <div id="trim-msg" style="margin-top:.6rem;"></div>
       </div>
 
-      <div class="form-row" style="margin-bottom:1rem; align-items:flex-end;">
-        <div class="form-group" style="max-width:160px;">
-          <label for="cards-per-contact">Cards per contact</label>
-          <input type="number" id="cards-per-contact" value="1" min="1" max="10" />
-        </div>
-        <div id="total-cards-preview" style="color:var(--text-m); font-size:.85rem; padding-bottom:.4rem;">
-          0 cards total
-        </div>
-        <button class="btn btn-green" id="generate-btn" style="margin-left:auto;">Generate cards</button>
+      <!-- Primary action: Generate game link -->
+      <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; margin-bottom:.75rem;">
+        <button class="btn btn-green" id="setup-btn">🔗 Generate Game Link</button>
       </div>
+      <div id="setup-msg"></div>
 
-      <div id="generate-msg"></div>
-
-      <div id="card-list-section" style="display:none; margin-top:1rem;">
+      <!-- Game link display (shown after setup) -->
+      <div id="game-link-section" style="display:none; margin-top:1rem; background:var(--surface2); border-radius:var(--radius); padding:1rem;">
         <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:.75rem; flex-wrap:wrap;">
-          <p style="margin:0; font-size:.9rem;">Share these links with your players:</p>
-          <button class="btn btn-grey" id="game-qr-btn" style="padding:.3rem .85rem; font-size:.85rem;" aria-label="Show game QR code">🔲 Game QR Code</button>
+          <span style="font-size:.9rem; font-weight:600;">🎮 Game Link</span>
+          <button class="btn btn-grey" id="game-qr-btn" style="padding:.3rem .85rem; font-size:.85rem;" aria-label="Show game QR code">🔲 QR Code</button>
           <a id="qr-display-link" href="#" target="_blank" class="btn btn-grey" style="padding:.3rem .85rem; font-size:.85rem;" aria-label="Open QR code on a separate page">📺 QR Display Page</a>
+        </div>
+        <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">
+          <input type="text" id="game-link-input" readonly style="flex:1; min-width:200px; font-size:.85rem; background:var(--surface); border-color:#555;" />
+          <button class="btn btn-grey" id="copy-link-btn" style="padding:.45rem .85rem; font-size:.85rem;">Copy</button>
+        </div>
+      </div>
+
+      <!-- Optional: Pre-assign cards to contacts -->
+      <details id="contacts-details" style="margin-top:1.25rem;">
+        <summary style="cursor:pointer; font-size:.9rem; font-weight:600; color:var(--text-m); user-select:none; padding:.35rem 0;">
+          ▸ Optional: Pre-assign cards to contacts
+        </summary>
+        <div style="margin-top:.85rem;">
+          <p style="font-size:.82rem; margin-bottom:.85rem;">
+            ⚠️ <strong>Generating new cards invalidates all existing player links.</strong>
+            Use <em>Reset</em> (Step 4) to replay the same boards without re-sending links.
+          </p>
+          <div class="form-group section" style="margin-bottom:1rem;">
+            <label for="contacts-input">
+              Contacts (email addresses or phone numbers, one per line)
+            </label>
+            <textarea id="contacts-input" rows="6"
+              placeholder="john@example.com&#10;jane@example.com&#10;+1 555 000 1234"
+              style="width:100%; padding:.6rem .85rem; background:var(--surface2);
+                border:1.5px solid #444; border-radius:var(--radius); color:var(--text);
+                font-size:.9rem; resize:vertical; outline:none; font-family:inherit;"></textarea>
+          </div>
+          <div class="form-row" style="margin-bottom:1rem; align-items:flex-end;">
+            <div class="form-group" style="max-width:160px;">
+              <label for="cards-per-contact">Cards per contact</label>
+              <input type="number" id="cards-per-contact" value="1" min="1" max="10" />
+            </div>
+            <div id="total-cards-preview" style="color:var(--text-m); font-size:.85rem; padding-bottom:.4rem;">
+              0 cards total
+            </div>
+            <button class="btn btn-green" id="generate-btn" style="margin-left:auto;">Generate cards</button>
+          </div>
+          <div id="generate-msg"></div>
+        </div>
+      </details>
+
+      <!-- Active player list -->
+      <div id="card-list-section" style="display:none; margin-top:1.25rem;">
+        <div style="display:flex; align-items:center; gap:.5rem; margin-bottom:.6rem; flex-wrap:wrap;">
+          <p style="margin:0; font-size:.9rem; font-weight:600;">👥 Active Players</p>
+          <span id="player-count" style="font-size:.82rem; color:var(--text-m);"></span>
         </div>
         <div id="card-list" class="card-list"></div>
       </div>

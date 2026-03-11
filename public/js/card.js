@@ -15,6 +15,12 @@ const nameInput    = document.getElementById('player-name');
 const nameBtn      = document.getElementById('name-btn');
 const cardSection  = document.getElementById('card-section');
 const cardNumber   = document.getElementById('card-number');
+const renameBtn    = document.getElementById('rename-btn');
+const renameForm   = document.getElementById('rename-form');
+const renameInput  = document.getElementById('rename-input');
+const renameSaveBtn = document.getElementById('rename-save-btn');
+const renameCancelBtn = document.getElementById('rename-cancel-btn');
+const renameMsg    = document.getElementById('rename-msg');
 const gameStatusEl = document.getElementById('game-status');
 const bingoGrid    = document.getElementById('bingo-grid');
 const bingoBtn     = document.getElementById('bingo-btn');
@@ -76,6 +82,59 @@ if (saved) {
   playerName = saved;
   nameSection.style.display = 'none';
   loadCard();
+}
+
+// ─── Rename ───────────────────────────────────────────────────────────────────
+renameBtn.addEventListener('click', () => {
+  renameInput.value = playerName;
+  renameForm.style.display = 'block';
+  renameBtn.style.display = 'none';
+  renameInput.focus();
+  renameInput.select();
+});
+
+renameCancelBtn.addEventListener('click', () => {
+  renameForm.style.display = 'none';
+  renameBtn.style.display = '';
+  if (renameMsg) renameMsg.innerHTML = '';
+});
+
+renameSaveBtn.addEventListener('click', doRename);
+renameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doRename(); });
+
+async function doRename() {
+  const newName = renameInput.value.trim();
+  if (!newName) { renameInput.focus(); return; }
+  if (newName === playerName) {
+    renameForm.style.display = 'none';
+    renameBtn.style.display = '';
+    return;
+  }
+
+  renameSaveBtn.disabled = true;
+  try {
+    const res = await fetch(`/api/card/${cardId}/rename`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerName: newName }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (renameMsg) renameMsg.innerHTML = `<span style="color:var(--red);font-size:.8rem;">${escHtml(data.error)}</span>`;
+      return;
+    }
+    playerName = newName;
+    saveName(newName);
+    cardNumber.textContent = newName;
+    document.title = `${newName} – Music Bingo`;
+    renameForm.style.display = 'none';
+    renameBtn.style.display = '';
+    if (renameMsg) renameMsg.innerHTML = '';
+  } catch (err) {
+    if (renameMsg) renameMsg.innerHTML = `<span style="color:var(--red);font-size:.8rem;">Network error</span>`;
+  } finally {
+    renameSaveBtn.disabled = false;
+  }
 }
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
@@ -315,6 +374,15 @@ socket.on('song:paused', (data = {}) => {
 
 socket.on('bingo:claimed', (w) => {
   showWinCelebration(w.playerName, w.cardNumber, w.rank);
+});
+
+socket.on('player:kicked', ({ cardId: kickedId }) => {
+  if (kickedId !== cardId) return;
+  // This player has been removed by the admin
+  cardSection.style.display = 'none';
+  setAlert('You have been removed from this game by the admin.', 'error');
+  // Prevent further interaction
+  socket.disconnect();
 });
 
 socket.on('game:options', (opts) => {

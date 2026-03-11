@@ -107,3 +107,34 @@ describe('AdminStore.getOrCreate()', () => {
     expect(refreshed.name).toBe('Updated Name');
   });
 });
+
+describe('AdminStore.deindexCard()', () => {
+  let store;
+
+  beforeEach(() => {
+    jest.isolateModules(() => {
+      store = require('../src/store');
+    });
+  });
+
+  test('removes a single card from the index so findCard returns null', () => {
+    const profile = makeProfile();
+    const admin = store.getOrCreate(profile.googleId, profile);
+
+    store.indexCards(profile.googleId, [{ id: 'card-a' }, { id: 'card-b' }]);
+    admin.game.setCards(
+      [{ id: 'card-a', number: 1, grid: [] }, { id: 'card-b', number: 2, grid: [] }],
+      [],
+      'playlist-1'
+    );
+
+    store.deindexCard('card-a');
+
+    expect(store.findCard('card-a')).toBeNull();
+    expect(store.findCard('card-b')).not.toBeNull();
+  });
+
+  test('does not error when card id is not in the index', () => {
+    expect(() => store.deindexCard('nonexistent')).not.toThrow();
+  });
+});

@@ -11,6 +11,16 @@ const spotifyMsg        = document.getElementById('spotify-status-msg');
 const playlistSelect    = document.getElementById('playlist-select');
 const refreshBtn        = document.getElementById('refresh-playlists-btn');
 const playlistInfo      = document.getElementById('playlist-info');
+const trimPlaylistSection = document.getElementById('trim-playlist-section');
+const trimSongCount     = document.getElementById('trim-song-count');
+const trimPlaylistName  = document.getElementById('trim-playlist-name');
+const trimBtn           = document.getElementById('trim-btn');
+const trimMsg           = document.getElementById('trim-msg');
+const setupBtn          = document.getElementById('setup-btn');
+const setupMsg          = document.getElementById('setup-msg');
+const gameLinkSection   = document.getElementById('game-link-section');
+const gameLinkInput     = document.getElementById('game-link-input');
+const copyLinkBtn       = document.getElementById('copy-link-btn');
 const contactsInput     = document.getElementById('contacts-input');
 const cardsPerContact   = document.getElementById('cards-per-contact');
 const totalCardsPreview = document.getElementById('total-cards-preview');
@@ -18,6 +28,7 @@ const generateBtn       = document.getElementById('generate-btn');
 const generateMsg       = document.getElementById('generate-msg');
 const cardListSection   = document.getElementById('card-list-section');
 const cardListEl        = document.getElementById('card-list');
+const playerCountEl     = document.getElementById('player-count');
 const startBtn          = document.getElementById('start-btn');
 const endBtn            = document.getElementById('end-btn');
 const resetBtn          = document.getElementById('reset-btn');
@@ -62,7 +73,11 @@ async function loadProfile() {
 
     updateSpotifyBadge(data.spotifyConnected);
     updateGameStatus(data.game.status);
-    updateQrDisplayLink();
+
+    if (currentGameId) {
+      updateGameLinkDisplay();
+      updateQrDisplayLink();
+    }
 
     // Restore state from existing game
     if (data.game.playedSongs && data.game.playedSongs.length) {
@@ -121,7 +136,7 @@ async function loadPlaylists() {
     const res  = await fetch('/api/admin/playlists');
     if (!res.ok) {
       const d = await res.json();
-      setAlert(generateMsg, d.error, 'error');
+      setAlert(setupMsg, d.error, 'error');
       return;
     }
     const playlists = await res.json();
@@ -132,7 +147,7 @@ async function loadPlaylists() {
           `<option value="${escAttr(p.id)}">${escHtml(p.name)} (${p.trackCount} tracks)</option>`
         ).join('');
   } catch (err) {
-    setAlert(generateMsg, 'Failed to load playlists: ' + err.message, 'error');
+    setAlert(setupMsg, 'Failed to load playlists: ' + err.message, 'error');
   } finally {
     refreshBtn.disabled = false;
   }
@@ -142,8 +157,110 @@ refreshBtn.addEventListener('click', loadPlaylists);
 
 playlistSelect.addEventListener('change', () => {
   const opt = playlistSelect.options[playlistSelect.selectedIndex];
-  if (!opt || !opt.value) { playlistInfo.textContent = ''; return; }
+  if (!opt || !opt.value) {
+    playlistInfo.textContent = '';
+    trimPlaylistSection.style.display = 'none';
+    return;
+  }
   playlistInfo.textContent = `Selected: "${opt.text}"`;
+  trimPlaylistSection.style.display = 'block';
+});
+
+// ─── Trimmed playlist creator ─────────────────────────────────────────────────
+trimBtn.addEventListener('click', async () => {
+  const sourcePlaylistId = playlistSelect.value;
+  if (!sourcePlaylistId) {
+    setAlert(trimMsg, 'Please select a source playlist first.', 'error');
+    return;
+  }
+  const songCount = parseInt(trimSongCount.value, 10);
+  if (!songCount || songCount < 24) {
+    setAlert(trimMsg, 'Please enter a valid song count (minimum 24).', 'error');
+    return;
+  }
+
+  trimBtn.disabled = true;
+  trimBtn.textContent = 'Creating…';
+  setAlert(trimMsg, '', '');
+
+  try {
+    const res = await fetch('/api/playlists/create-trimmed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sourcePlaylistId,
+        songCount,
+        name: trimPlaylistName.value.trim() || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setAlert(trimMsg, data.error, 'error'); return; }
+
+    setAlert(trimMsg, `✓ Playlist "${escHtml(data.name)}" created with ${data.trackCount} songs. Reloading playlists…`, 'success');
+
+    // Reload playlists and auto-select the new one
+    await loadPlaylists();
+    playlistSelect.value = data.id;
+    playlistSelect.dispatchEvent(new Event('change'));
+  } catch (err) {
+    setAlert(trimMsg, 'Network error: ' + err.message, 'error');
+  } finally {
+    trimBtn.disabled = false;
+    trimBtn.textContent = 'Create & Select';
+  }
+});
+
+// ─── Game setup (generate game link) ─────────────────────────────────────────
+setupBtn.addEventListener('click', async () => {
+  const playlistId = playlistSelect.value;
+  if (!playlistId) { setAlert(setupMsg, 'Please select a playlist.', 'error'); return; }
+
+  setupBtn.disabled = true;
+  setupBtn.textContent = 'Setting up…';
+  setAlert(setupMsg, '', '');
+
+  try {
+    const res  = await fetch('/api/game/setup', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ playlistId }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setAlert(setupMsg, data.error, 'error'); return; }
+
+    currentGameId = data.gameId;
+    setAlert(setupMsg, `✓ ${data.message} Players can now join via the link or QR code.`, 'success');
+    updateGameLinkDisplay();
+    updateQrDisplayLink();
+
+    // Join the new game room
+    socket.emit('admin:join', { googleId: currentAdminId });
+  } catch (err) {
+    setAlert(setupMsg, 'Network error: ' + err.message, 'error');
+  } finally {
+    setupBtn.disabled = false;
+    setupBtn.textContent = '🔗 Generate Game Link';
+  }
+});
+
+function updateGameLinkDisplay() {
+  if (!currentGameId) return;
+  const joinUrl = window.location.origin + '/?game=' + currentGameId;
+  gameLinkInput.value = joinUrl;
+  gameLinkSection.style.display = 'block';
+}
+
+copyLinkBtn.addEventListener('click', () => {
+  if (!gameLinkInput.value) return;
+  navigator.clipboard.writeText(gameLinkInput.value).then(() => {
+    copyLinkBtn.textContent = '✓ Copied!';
+    setTimeout(() => { copyLinkBtn.textContent = 'Copy'; }, 2000);
+  }).catch(() => {
+    gameLinkInput.select();
+    document.execCommand('copy');
+    copyLinkBtn.textContent = '✓ Copied!';
+    setTimeout(() => { copyLinkBtn.textContent = 'Copy'; }, 2000);
+  });
 });
 
 // ─── Contacts / total cards preview ──────────────────────────────────────────
@@ -162,7 +279,7 @@ function updatePreview() {
 contactsInput.addEventListener('input', updatePreview);
 cardsPerContact.addEventListener('input', updatePreview);
 
-// ─── Generate cards ───────────────────────────────────────────────────────────
+// ─── Generate cards (pre-assign contacts) ─────────────────────────────────────
 generateBtn.addEventListener('click', async () => {
   const playlistId = playlistSelect.value;
   if (!playlistId) { setAlert(generateMsg, 'Please select a playlist.', 'error'); return; }
@@ -187,8 +304,11 @@ generateBtn.addEventListener('click', async () => {
 
     if (!res.ok) { setAlert(generateMsg, data.error, 'error'); return; }
 
+    currentGameId = data.gameId;
     setAlert(generateMsg, `✓ ${data.message} (${data.songCount} songs in playlist)`, 'success');
     renderCardList(data.cards);
+    updateGameLinkDisplay();
+    updateQrDisplayLink();
 
     // Join the new game room
     socket.emit('admin:join', { googleId: currentAdminId });
@@ -200,28 +320,73 @@ generateBtn.addEventListener('click', async () => {
   }
 });
 
+// ─── Card / player list ────────────────────────────────────────────────────────
 function renderCardList(cards) {
-  cardListEl.innerHTML = cards.map(c => {
-    const fullUrl = window.location.origin + c.url;
-    let shareBtn = '';
-
-    if (c.contact && c.contact.type === 'phone') {
-      const raw   = c.contact.value.trim();
-      const phone = (raw.startsWith('+') ? '+' : '') + raw.replace(/\D/g, '');
-      const msg   = encodeURIComponent(`Your Music Bingo card is ready! Tap to play: ${fullUrl}`);
-      shareBtn = `<a href="sms:${escAttr(phone)}?body=${msg}" class="share-btn" title="Send text to ${escAttr(c.contact.value)}">💬</a>`;
-    } else if (c.contact && c.contact.type === 'email') {
-      const subject = encodeURIComponent('Your Music Bingo Card');
-      const body    = encodeURIComponent(`Hi,\n\nYour Music Bingo card is ready! Click the link below to play:\n\n${fullUrl}\n\nGood luck and have fun!`);
-      shareBtn = `<a href="mailto:${escAttr(c.contact.value)}?subject=${subject}&body=${body}" class="share-btn" title="Send email to ${escAttr(c.contact.value)}">✉️</a>`;
-    }
-
-    const contactLabel = c.contact
-      ? ` <span class="card-contact-label">(${escHtml(c.contact.value)})</span>`
-      : '';
-    return `<span class="card-list-item"><a href="${escAttr(c.url)}" target="_blank">Card #${c.number}${contactLabel}</a>${shareBtn}</span>`;
-  }).join('');
+  cardListEl.innerHTML = '';
+  cards.forEach(c => addCardItem(c));
+  updatePlayerCount();
   cardListSection.style.display = 'block';
+}
+
+function addCardItem(c) {
+  const fullUrl = window.location.origin + c.url;
+  let shareBtn = '';
+
+  if (c.contact && c.contact.type === 'phone') {
+    const raw   = c.contact.value.trim();
+    const phone = (raw.startsWith('+') ? '+' : '') + raw.replace(/\D/g, '');
+    const msg   = encodeURIComponent(`Your Music Bingo card is ready! Tap to play: ${fullUrl}`);
+    shareBtn = `<a href="sms:${escAttr(phone)}?body=${msg}" class="share-btn" title="Send text to ${escAttr(c.contact.value)}">💬</a>`;
+  } else if (c.contact && c.contact.type === 'email') {
+    const subject = encodeURIComponent('Your Music Bingo Card');
+    const body    = encodeURIComponent(`Hi,\n\nYour Music Bingo card is ready! Click the link below to play:\n\n${fullUrl}\n\nGood luck and have fun!`);
+    shareBtn = `<a href="mailto:${escAttr(c.contact.value)}?subject=${subject}&body=${body}" class="share-btn" title="Send email to ${escAttr(c.contact.value)}">✉️</a>`;
+  }
+
+  const playerLabel = c.contact
+    ? escHtml(c.contact.value)
+    : `Player #${c.number}`;
+
+  const item = document.createElement('div');
+  item.className = 'player-list-item';
+  item.dataset.cardId = c.id;
+  item.innerHTML = `
+    <a href="${escAttr(c.url)}" target="_blank" class="player-link" title="Open card">
+      <span class="player-num">#${c.number}</span>
+      <span class="player-name" id="player-name-${escAttr(c.id)}">${playerLabel}</span>
+    </a>
+    ${shareBtn}
+    <button class="btn btn-grey kick-btn" data-card-id="${escAttr(c.id)}" title="Kick player" style="padding:.2rem .6rem; font-size:.75rem; margin-left:auto;">✕ Kick</button>
+  `;
+  cardListEl.appendChild(item);
+
+  item.querySelector('.kick-btn').addEventListener('click', () => kickPlayer(c.id));
+}
+
+function updatePlayerCount() {
+  const count = cardListEl.querySelectorAll('.player-list-item').length;
+  playerCountEl.textContent = `(${count} player${count !== 1 ? 's' : ''})`;
+}
+
+async function kickPlayer(cardId) {
+  if (!confirm('Remove this player? Their card link will be invalidated.')) return;
+  try {
+    const res = await fetch(`/api/cards/${encodeURIComponent(cardId)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { setAlert(globalAlert, data.error, 'error'); return; }
+    removeCardItem(cardId);
+  } catch (err) {
+    setAlert(globalAlert, 'Network error: ' + err.message, 'error');
+  }
+}
+
+function removeCardItem(cardId) {
+  const item = cardListEl.querySelector(`[data-card-id="${CSS.escape(cardId)}"]`);
+  if (item) item.remove();
+  updatePlayerCount();
+  if (cardListEl.children.length === 0) {
+    cardListSection.style.display = 'none';
+  }
 }
 
 // ─── Game controls ────────────────────────────────────────────────────────────
@@ -351,6 +516,7 @@ optBingoMode.addEventListener('change', savePlayerOptions);
 socket.on('game:state', (state) => {
   currentGameId = state.gameId;
   updateGameStatus(state.status);
+  updateGameLinkDisplay();
   updateQrDisplayLink();
   if (state.currentSong) {
     npArt.src = state.currentSong.albumArt || '';
@@ -390,14 +556,20 @@ socket.on('bingo:claimed', (w) => {
 });
 
 socket.on('player:joined', (card) => {
-  const contactLabel = card.contact
-    ? ` <span class="card-contact-label">(${escHtml(card.contact.value)})</span>`
-    : '';
-  const item = document.createElement('span');
-  item.className = 'card-list-item';
-  item.innerHTML = `<a href="${escAttr(card.url)}" target="_blank">Card #${card.number}${contactLabel}</a>`;
-  cardListEl.appendChild(item);
-  cardListSection.style.display = 'block';
+  // Add to card list if not already there
+  if (!cardListEl.querySelector(`[data-card-id="${CSS.escape(card.id)}"]`)) {
+    addCardItem({ ...card, url: card.url || `/card/${card.id}` });
+    cardListSection.style.display = 'block';
+  }
+});
+
+socket.on('player:renamed', ({ cardId, playerName }) => {
+  const nameEl = document.getElementById(`player-name-${CSS.escape(cardId)}`);
+  if (nameEl) nameEl.textContent = playerName;
+});
+
+socket.on('player:kicked', ({ cardId }) => {
+  removeCardItem(cardId);
 });
 
 // ─── QR code modal ────────────────────────────────────────────────────────────
@@ -410,7 +582,7 @@ const qrDisplayLink = document.getElementById('qr-display-link');
 
 function openQrModal() {
   if (!currentGameId) {
-    setAlert(globalAlert, 'Generate bingo cards before showing the QR code.', 'error');
+    setAlert(globalAlert, 'Set up a game before showing the QR code.', 'error');
     return;
   }
   qrImg.src = '/api/qr';

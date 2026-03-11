@@ -17,6 +17,8 @@ const SCOPES = [
   'user-read-playback-state',
   'playlist-read-private',
   'playlist-read-collaborative',
+  'playlist-modify-public',
+  'playlist-modify-private',
 ];
 
 /** One minute buffer before token expiry triggers a refresh. */
@@ -186,6 +188,57 @@ class SpotifyClient {
     }
 
     return songs;
+  }
+
+  /**
+   * Create a new Spotify playlist for the authenticated user containing a
+   * random subset of tracks from an existing playlist.
+   * @param {string} sourcePlaylistId  Spotify playlist ID to sample from.
+   * @param {number} songCount         Number of tracks to include (clamped to the source playlist size).
+   * @param {string} [name]            Name for the new playlist. Defaults to "Music Bingo – <N> songs".
+   * @returns {Promise<{ id: string, name: string, trackCount: number, externalUrl: string }>}
+   */
+  async createPlaylistFromPlaylist(sourcePlaylistId, songCount, name) {
+    await this._ensureValidToken();
+
+    const songs = await this.getPlaylistSongs(sourcePlaylistId);
+    if (songs.length < 24) {
+      throw new Error(`Source playlist only has ${songs.length} tracks. At least 24 are required.`);
+    }
+
+    const count = Math.min(Math.max(1, songCount), songs.length);
+    // Fisher-Yates shuffle, then take the first `count` items.
+    const shuffled = songs.slice();
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const selected = shuffled.slice(0, count);
+
+    const me = await this._api.getMe();
+    const userId = me.body.id;
+
+    const playlistName = name || `Music Bingo – ${count} songs`;
+    const created = await this._api.createPlaylist(userId, {
+      name: playlistName,
+      public: false,
+      description: `Auto-generated Music Bingo playlist with ${count} tracks.`,
+    });
+    const newPlaylistId = created.body.id;
+    const externalUrl = created.body.external_urls && created.body.external_urls.spotify;
+
+    // Spotify's add-tracks endpoint accepts at most 100 URIs per request.
+    const trackUris = selected.map((s) => `spotify:track:${s.id}`);
+    for (let i = 0; i < trackUris.length; i += 100) {
+      await this._api.addTracksToPlaylist(newPlaylistId, trackUris.slice(i, i + 100));
+    }
+
+    return {
+      id: newPlaylistId,
+      name: playlistName,
+      trackCount: count,
+      externalUrl: externalUrl || null,
+    };
   }
 
   /**
