@@ -215,6 +215,23 @@ trimBtn.addEventListener('click', async () => {
 
     // Reload playlists and auto-select the new one
     await loadPlaylists();
+
+    // Spotify's API may not reflect the new track count yet (eventual consistency).
+    // Find the option and correct its text using the count we know from the response.
+    const playlistOptionText = `${data.name} (${data.trackCount} tracks)`;
+    let newOpt = Array.from(playlistSelect.options).find(opt => opt.value === data.id);
+    if (newOpt) {
+      newOpt.textContent = playlistOptionText;
+      newOpt.dataset.name = data.name;
+    } else {
+      // Playlist not yet indexed by Spotify; insert it manually.
+      newOpt = document.createElement('option');
+      newOpt.value = data.id;
+      newOpt.dataset.name = data.name;
+      newOpt.textContent = playlistOptionText;
+      playlistSelect.appendChild(newOpt);
+    }
+
     playlistSelect.value = data.id;
     playlistSelect.dispatchEvent(new Event('change'));
   } catch (err) {
