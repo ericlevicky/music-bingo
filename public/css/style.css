@@ -496,3 +496,23 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
 .bingo-cell.win-flash {
   animation: cellWin .8s ease forwards;
 }
+
+/* ─── Emoji rain ─────────────────────────────────────────────────────────── */
+.emoji-rain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1999;
+  overflow: hidden;
+}
+.emoji-rain-particle {
+  position: absolute;
+  top: -3rem;
+  animation: emojiFall linear forwards;
+  will-change: transform, opacity;
+}
+@keyframes emojiFall {
+  0%   { transform: translateY(0) rotate(0deg);    opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+}

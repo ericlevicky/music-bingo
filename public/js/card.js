@@ -373,7 +373,7 @@ socket.on('song:paused', (data = {}) => {
 });
 
 socket.on('bingo:claimed', (w) => {
-  showWinCelebration(w.playerName, w.cardNumber, w.rank);
+  showWinCelebration(w.playerName, w.cardNumber, w.rank, w.celebrationEmoji);
 });
 
 socket.on('player:kicked', ({ cardId: kickedId }) => {
@@ -521,8 +521,27 @@ function friendlyPattern(pattern) {
   return pattern;
 }
 
+/** Rain a chosen emoji across the screen for a few seconds. */
+function startEmojiRain(emoji) {
+  const container = document.createElement('div');
+  container.className = 'emoji-rain';
+  document.body.appendChild(container);
+  const count = 35;
+  for (let _ = 0; _ < count; _++) {
+    const span = document.createElement('span');
+    span.className = 'emoji-rain-particle';
+    span.textContent = emoji;
+    span.style.left            = `${Math.random() * 100}%`;
+    span.style.fontSize        = `${1.5 + Math.random() * 2}rem`;
+    span.style.animationDelay    = `${Math.random() * 3}s`;
+    span.style.animationDuration = `${2 + Math.random() * 3}s`;
+    container.appendChild(span);
+  }
+  setTimeout(() => container.remove(), 7000);
+}
+
 /** Show a full-board celebration overlay for any winner. */
-function showWinCelebration(winnerName, cardNumber, rank = 1) {
+function showWinCelebration(winnerName, cardNumber, rank = 1, emoji = '🎊') {
   if (rank === 1) {
     winOverlayTitle.textContent = `🎉 ${winnerName} Wins!`;
     winOverlaySub.textContent   = `Card #${cardNumber} got BINGO first!`;
@@ -533,6 +552,7 @@ function showWinCelebration(winnerName, cardNumber, rank = 1) {
     winOverlay.dataset.rank = String(rank);
   }
   winOverlay.classList.add('visible');
+  startEmojiRain(emoji);
   // Stagger a flash animation across every grid cell
   document.querySelectorAll('.bingo-cell').forEach((el, i) => {
     el.classList.remove('win-flash');
