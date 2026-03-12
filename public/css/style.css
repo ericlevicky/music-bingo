@@ -502,7 +502,7 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 1999;
+  z-index: 9999;
   overflow: hidden;
 }
 .emoji-rain-particle {
