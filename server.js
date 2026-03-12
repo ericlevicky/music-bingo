@@ -648,6 +648,13 @@ app.post('/api/bingo', strictLimiter, async (req, res) => {
     return res.status(400).json({ error: 'Not a valid bingo. Keep playing!' });
   }
 
+  const FUN_EMOJIS = [
+    '🎸','🦄','🌈','🎊','🍕','🦋','🎯','🎲','🐙','🦩',
+    '🌺','🎪','🍦','🦀','🎭','🏄','🚀','🌊','🎠','🦚',
+    '🌻','🍉','🎺','🐬','🦁','🎻','🌴','🍄','🦜','🎡',
+  ];
+  const celebrationEmoji = FUN_EMOJIS[Math.floor(Math.random() * FUN_EMOJIS.length)];
+
   const claim = {
     cardId,
     cardNumber: card.number,
@@ -657,7 +664,7 @@ app.post('/api/bingo', strictLimiter, async (req, res) => {
   };
 
   const rank    = admin.game.addWinner(claim);
-  const payload = { ...claim, rank };
+  const payload = { ...claim, rank, celebrationEmoji };
 
   io.to(`game:${admin.game.gameId}`).emit('bingo:claimed', payload);
   res.json(payload);

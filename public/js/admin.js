@@ -450,6 +450,24 @@ function updateGameStatus(status) {
   endBtn.disabled   = status !== 'active';
 }
 
+function startEmojiRain(emoji) {
+  const container = document.createElement('div');
+  container.className = 'emoji-rain';
+  document.body.appendChild(container);
+  const count = 35;
+  for (let _ = 0; _ < count; _++) {
+    const span = document.createElement('span');
+    span.className = 'emoji-rain-particle';
+    span.textContent = emoji;
+    span.style.left            = `${Math.random() * 100}%`;
+    span.style.fontSize        = `${1.5 + Math.random() * 2}rem`;
+    span.style.animationDelay    = `${Math.random() * 3}s`;
+    span.style.animationDuration = `${2 + Math.random() * 3}s`;
+    container.appendChild(span);
+  }
+  setTimeout(() => container.remove(), 7000);
+}
+
 function addWinnerRow(w, rank) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
@@ -568,6 +586,7 @@ socket.on('bingo:claimed', (w) => {
       `🏆 <strong>${escHtml(w.playerName)}</strong> got BINGO! (Card #${w.cardNumber})`,
       'success');
   }
+  startEmojiRain(w.celebrationEmoji || '🎊');
 });
 
 socket.on('player:joined', (card) => {
