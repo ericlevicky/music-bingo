@@ -48,6 +48,7 @@ let gameStatus  = 'idle';
 let playedSongIds = new Set();
 let markedCells   = new Set(); // "row,col" strings
 let currentSong   = null;     // currently playing track
+let winnerData    = null;     // set after this card claims a valid bingo
 let playerOptions = {
   showSongHistory:  true,
   showNowPlaying:   true,
@@ -271,6 +272,12 @@ function addPlayedSong(song) {
 bingoBtn.addEventListener('click', async () => {
   if (!card || gameStatus !== 'active') return;
 
+  // If this card has already won, retrigger the celebration locally.
+  if (winnerData) {
+    showWinCelebration(playerName, winnerData.cardNumber, winnerData.rank, winnerData.celebrationEmoji);
+    return;
+  }
+
   bingoBtn.disabled = true;
   bingoBtn.textContent = 'Checking…';
   setBingoMsg('', '');
@@ -304,8 +311,10 @@ bingoBtn.addEventListener('click', async () => {
       `🏆 BINGO validated! You are #${data.rank}! Pattern: ${friendlyPattern(data.pattern)}`,
       'success'
     );
-    bingoBtn.textContent = '🏆 BINGO!';
-    showWinCelebration(playerName, data.cardNumber, data.rank);
+    winnerData = { cardNumber: data.cardNumber, rank: data.rank, celebrationEmoji: data.celebrationEmoji };
+    bingoBtn.disabled = false;
+    bingoBtn.textContent = '🎉 Celebrate!';
+    showWinCelebration(playerName, data.cardNumber, data.rank, data.celebrationEmoji);
   }
 });
 
@@ -340,6 +349,7 @@ socket.on('game:started', (state = {}) => {
   updateGameStatus('active');
   playedSongIds = new Set();
   markedCells   = new Set();
+  winnerData    = null;
   saveMarked();
   applyPlayerOptions();
   setAlert('', '');
@@ -354,6 +364,7 @@ socket.on('game:ended', () => {
 socket.on('game:reset', () => {
   updateGameStatus('idle');
   markedCells = new Set();
+  winnerData  = null;
   saveMarked();
   if (card) loadCard();
 });
