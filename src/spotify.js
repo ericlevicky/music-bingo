@@ -201,9 +201,19 @@ class SpotifyClient {
   async createPlaylistFromPlaylist(sourcePlaylistId, songCount, name) {
     await this._ensureValidToken();
 
-    const songs = await this.getPlaylistSongs(sourcePlaylistId);
+    const rawSongs = await this.getPlaylistSongs(sourcePlaylistId);
+
+    // Deduplicate by track ID (a playlist may have the same song added more
+    // than once; duplicates would produce invalid bingo cards).
+    const seenIds = new Set();
+    const songs = rawSongs.filter((s) => {
+      if (seenIds.has(s.id)) return false;
+      seenIds.add(s.id);
+      return true;
+    });
+
     if (songs.length < 24) {
-      throw new Error(`Source playlist only has ${songs.length} songs. At least 24 are required.`);
+      throw new Error(`Source playlist only has ${songs.length} unique songs. At least 24 are required.`);
     }
 
     const count = Math.min(Math.max(1, songCount), songs.length);
