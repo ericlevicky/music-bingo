@@ -143,9 +143,10 @@ async function loadPlaylists() {
     playlistSelect.innerHTML = playlists.length === 0
       ? '<option value="">No playlists found on your Spotify account</option>'
       : '<option value="">— Select a playlist —</option>' +
-        playlists.map(p =>
-          `<option value="${escAttr(p.id)}" data-name="${escAttr(p.name)}">${escHtml(p.name)} (${p.trackCount} tracks)</option>`
-        ).join('');
+        playlists.map(p => {
+          const tooFew = p.trackCount < 24;
+          return `<option value="${escAttr(p.id)}" data-name="${escAttr(p.name)}" data-track-count="${p.trackCount}"${tooFew ? ' disabled' : ''}>${escHtml(p.name)} (${p.trackCount} track${p.trackCount !== 1 ? 's' : ''})${tooFew ? ' – too few songs' : ''}</option>`;
+        }).join('');
   } catch (err) {
     setAlert(setupMsg, 'Failed to load playlists: ' + err.message, 'error');
   } finally {
@@ -162,11 +163,17 @@ playlistSelect.addEventListener('change', () => {
     trimPlaylistSection.style.display = 'none';
     return;
   }
+  const trackCount = parseInt(opt.dataset.trackCount, 10) || 0;
   playlistInfo.textContent = `Selected: "${opt.text}"`;
-  trimPlaylistSection.style.display = 'block';
-  // Show auto-generated name preview
-  const sourceName = opt.dataset.name || opt.text;
-  trimPlaylistNamePreview.textContent = buildTrimmedPlaylistName(sourceName);
+  // Only offer trimming when the playlist has more songs than the 24-song minimum.
+  if (trackCount > 24) {
+    trimPlaylistSection.style.display = 'block';
+    // Show auto-generated name preview
+    const sourceName = opt.dataset.name || opt.text;
+    trimPlaylistNamePreview.textContent = buildTrimmedPlaylistName(sourceName);
+  } else {
+    trimPlaylistSection.style.display = 'none';
+  }
 });
 
 /** Build the auto-generated playlist name, truncated to fit Spotify's 100-char limit. */
@@ -615,7 +622,7 @@ socket.on('player:joined', (card) => {
 });
 
 socket.on('player:renamed', ({ cardId, playerName }) => {
-  const nameEl = document.getElementById(`player-name-${CSS.escape(cardId)}`);
+  const nameEl = document.getElementById(`player-name-${cardId}`);
   if (nameEl) nameEl.textContent = playerName;
 });
 

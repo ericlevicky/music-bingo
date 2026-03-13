@@ -363,9 +363,18 @@ socket.on('game:ended', () => {
 });
 socket.on('game:reset', () => {
   updateGameStatus('idle');
-  markedCells = new Set();
-  winnerData  = null;
+  markedCells   = new Set();
+  playedSongIds = new Set();
+  winnerData    = null;
+  currentSong   = null;
   saveMarked();
+  // Clear the played-songs history list
+  Array.from(playedList.children).forEach(el => {
+    if (el !== noSongsLi) el.remove();
+  });
+  noSongsLi.style.display = '';
+  nowPlaying.style.display = 'none';
+  updateHints(null);
   if (card) loadCard();
 });
 
