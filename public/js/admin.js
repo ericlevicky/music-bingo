@@ -615,7 +615,7 @@ socket.on('player:joined', (card) => {
 });
 
 socket.on('player:renamed', ({ cardId, playerName }) => {
-  const nameEl = document.getElementById(`player-name-${CSS.escape(cardId)}`);
+  const nameEl = document.getElementById(`player-name-${cardId}`);
   if (nameEl) nameEl.textContent = playerName;
 });
 
