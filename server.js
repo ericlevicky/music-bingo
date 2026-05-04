@@ -488,6 +488,70 @@ app.post('/api/game/reset', strictLimiter, ensureAdmin, (req, res) => {
   res.json({ message: 'Game reset.' });
 });
 
+/**
+ * Switch the playlist without invalidating existing player links.
+ * Regenerates every card's grid from the new playlist songs, preserving card
+ * IDs, player names and the game join URL (gameId is unchanged).
+ * Only permitted when the game is idle or ended (not active).
+ */
+app.post('/api/game/change-playlist', strictLimiter, ensureAdmin, ensureSpotify, async (req, res) => {
+  const { playlistId } = req.body;
+  if (!playlistId) {
+    return res.status(400).json({ error: 'playlistId is required.' });
+  }
+  const pid = extractPlaylistId(playlistId);
+  if (!pid) {
+    return res.status(400).json({ error: 'Invalid Spotify playlist ID.' });
+  }
+  try {
+    const songs = await req.user.spotifyClient.getPlaylistSongs(pid);
+    if (songs.length < 24) {
+      return res.status(400).json({
+        error: `Playlist only has ${songs.length} tracks. At least 24 are required.`,
+      });
+    }
+    req.user.game.updatePlaylist(songs, pid);
+    // Regenerate every card's grid from the new playlist.
+    for (const card of req.user.game.cards) {
+      card.grid = generateGrid(songs);
+    }
+    if (req.user.game.gameId) {
+      io.to(`game:${req.user.game.gameId}`).emit('game:playlist-changed', {
+        songCount: songs.length,
+        playlistId: pid,
+      });
+    }
+    res.json({
+      message: `Playlist updated with ${songs.length} songs. Card grids regenerated.`,
+      songCount: songs.length,
+      cardCount: req.user.game.cards.length,
+    });
+  } catch (err) {
+    if (err.message.includes('active')) {
+      return res.status(400).json({ error: err.message });
+    }
+    console.error('Change playlist error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Completely reset the game state for this admin, ready for a brand-new game.
+ * All cards are removed from the index, the gameId is cleared, and the admin
+ * will need to set up a new game link before players can join again.
+ */
+app.post('/api/game/new', strictLimiter, ensureAdmin, (req, res) => {
+  const gameId = req.user.game.gameId;
+  stopPolling(req.user);
+  store.deindexCards(req.user.googleId);
+  req.user.game.newGame();
+  if (gameId) {
+    // Notify any connected players that the game has been torn down.
+    io.to(`game:${gameId}`).emit('game:new');
+  }
+  res.json({ message: 'Game cleared. Set up a new game when ready.' });
+});
+
 app.post('/api/game/options', strictLimiter, ensureAdmin, (req, res) => {
   const { showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace, bingoMode } = req.body;
   req.user.game.setPlayerOptions({ showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace, bingoMode });

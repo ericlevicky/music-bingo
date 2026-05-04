@@ -378,6 +378,31 @@ socket.on('game:reset', () => {
   if (card) loadCard();
 });
 
+socket.on('game:playlist-changed', () => {
+  // The card grid has been regenerated with a new playlist — reload it and
+  // clear all player state so they start fresh with the new songs.
+  markedCells   = new Set();
+  playedSongIds = new Set();
+  winnerData    = null;
+  currentSong   = null;
+  saveMarked();
+  Array.from(playedList.children).forEach(el => {
+    if (el !== noSongsLi) el.remove();
+  });
+  noSongsLi.style.display = '';
+  nowPlaying.style.display = 'none';
+  updateHints(null);
+  setAlert('📋 The playlist has been updated. Your card has been refreshed with new songs.', 'info');
+  if (card) loadCard();
+});
+
+socket.on('game:new', () => {
+  // Admin started a completely new game — this card link is no longer valid.
+  cardSection.style.display = 'none';
+  setAlert('This game has ended. Ask the organiser for the new game link.', 'info');
+  socket.disconnect();
+});
+
 socket.on('song:playing', ({ song, previousSong }) => {
   if (previousSong && !playedSongIds.has(previousSong.id)) addPlayedSong(previousSong);
   showNowPlaying(song);
