@@ -13,7 +13,7 @@
     <a href="/">Home</a>
   </nav>
 
-  <div class="container" style="padding-top:1.25rem; padding-bottom:3rem;">
+  <div class="container" style="padding-top:1.25rem; padding-bottom:7rem;">
 
     <!-- Status banner -->
     <div id="global-alert" style="margin-bottom:1rem;"></div>
@@ -75,9 +75,11 @@
       </div>
       <div id="bingo-grid" class="bingo-grid"></div>
 
-      <!-- BINGO claim button -->
-      <button id="bingo-btn" disabled>BINGO!</button>
-      <div id="bingo-msg" style="text-align:center;"></div>
+      <!-- BINGO claim button – lives in a sticky bar so it's always reachable -->
+      <div id="bingo-bar">
+        <div id="bingo-msg" style="text-align:center;"></div>
+        <button id="bingo-btn" disabled>BINGO!</button>
+      </div>
 
       <!-- Played songs reference -->
       <div id="songs-history" class="card" style="margin-top:1.5rem;">

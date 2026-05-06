@@ -83,6 +83,9 @@ if (saved) {
   playerName = saved;
   nameSection.style.display = 'none';
   loadCard();
+} else {
+  // No cached name – focus the input so the player can start typing immediately.
+  nameInput.focus();
 }
 
 // ─── Rename ───────────────────────────────────────────────────────────────────

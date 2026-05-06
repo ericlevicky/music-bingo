@@ -484,6 +484,42 @@ details.card[open] > summary::before { content: '▾'; }
   #now-playing img { width: 40px; height: 40px; }
 }
 
+/* ─── Sticky BINGO bar (player page) ─────────────────────────────────────── */
+/*
+ * Keeps the BINGO! button and its feedback message pinned to the bottom of
+ * the viewport so players never have to scroll past the grid to claim BINGO.
+ */
+#bingo-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: .4rem 1rem .85rem;
+  background: linear-gradient(to top, rgba(18,18,18,.97) 60%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .25rem;
+  z-index: 100;
+  /* Let the bar itself be non-interactive so the gradient doesn't block taps
+     on the grid; only the children (button, msg) capture events. */
+  pointer-events: none;
+}
+#bingo-bar > * { pointer-events: auto; }
+/* Override the block-level margin baked into #bingo-btn when it lives inside
+   the bar (higher specificity than the standalone #bingo-btn rule). */
+#bingo-bar #bingo-btn { margin: 0; display: inline-block; }
+
+/* ─── Responsive 2-column grid ──────────────────────────────────────────── */
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+@media (max-width: 700px) {
+  .grid-2col { grid-template-columns: 1fr; }
+}
+
 /* ─── Winner celebration overlay ─────────────────────────────────────────── */
 .win-overlay {
   position: fixed;
