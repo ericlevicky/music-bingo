@@ -138,3 +138,49 @@ describe('AdminStore.deindexCard()', () => {
     expect(() => store.deindexCard('nonexistent')).not.toThrow();
   });
 });
+
+describe('kick flow (removeCard + deindexCard)', () => {
+  let store;
+
+  beforeEach(() => {
+    jest.isolateModules(() => {
+      store = require('../src/store');
+    });
+  });
+
+  test('findCard returns null and card is removed from game after kick', () => {
+    const profile = makeProfile();
+    const admin = store.getOrCreate(profile.googleId, profile);
+
+    const card = { id: 'card-kick', number: 1, grid: [] };
+    store.indexCards(profile.googleId, [card]);
+    admin.game.setCards([card], [], 'playlist-1');
+
+    // Simulate what DELETE /api/cards/:id does on the server
+    admin.game.removeCard('card-kick');
+    store.deindexCard('card-kick');
+
+    expect(store.findCard('card-kick')).toBeNull();
+    expect(admin.game.getCardById('card-kick')).toBeNull();
+    expect(admin.game.cards).toHaveLength(0);
+  });
+
+  test('other cards remain accessible after one player is kicked', () => {
+    const profile = makeProfile();
+    const admin = store.getOrCreate(profile.googleId, profile);
+
+    const cards = [
+      { id: 'card-a', number: 1, grid: [] },
+      { id: 'card-b', number: 2, grid: [] },
+    ];
+    store.indexCards(profile.googleId, cards);
+    admin.game.setCards([...cards], [], 'playlist-1');
+
+    admin.game.removeCard('card-a');
+    store.deindexCard('card-a');
+
+    expect(store.findCard('card-a')).toBeNull();
+    expect(store.findCard('card-b')).not.toBeNull();
+    expect(admin.game.cards).toHaveLength(1);
+  });
+});
