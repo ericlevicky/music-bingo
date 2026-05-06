@@ -56,8 +56,9 @@ const optBingoMode      = document.getElementById('opt-bingo-mode');
 const optionsMsg        = document.getElementById('options-msg');
 
 // ─── Admin profile ────────────────────────────────────────────────────────────
-let currentAdminId = null;
-let currentGameId  = null;
+let currentAdminId   = null;
+let currentGameId    = null;
+let currentPlaylistName = null;
 
 async function loadProfile() {
   try {
@@ -98,8 +99,19 @@ async function loadProfile() {
       syncOptionCheckboxes(data.game.playerOptions);
     }
 
-    // Load playlists if Spotify is connected
-    if (data.spotifyConnected) loadPlaylists();
+    // Load playlists if Spotify is connected; then pre-select the active playlist
+    if (data.spotifyConnected) {
+      await loadPlaylists();
+      if (data.game.playlistId) {
+        const opt = Array.from(playlistSelect.options).find(o => o.value === data.game.playlistId);
+        if (opt) {
+          playlistSelect.value = data.game.playlistId;
+          currentPlaylistName = getPlaylistName(opt);
+          playlistSelect.dispatchEvent(new Event('change'));
+        }
+      }
+    }
+    updateGameConfigBar();
 
     // Join the admin's game room
     if (data.game.gameId) {
@@ -163,8 +175,11 @@ playlistSelect.addEventListener('change', () => {
   if (!opt || !opt.value) {
     playlistInfo.textContent = '';
     trimPlaylistSection.style.display = 'none';
+    currentPlaylistName = null;
+    updateGameConfigBar();
     return;
   }
+  currentPlaylistName = getPlaylistName(opt);
   const trackCount = parseInt(opt.dataset.trackCount, 10) || 0;
   playlistInfo.textContent = `Selected: "${opt.text}"`;
   // Only offer trimming when the playlist has more songs than the 24-song minimum.
@@ -176,7 +191,13 @@ playlistSelect.addEventListener('change', () => {
   } else {
     trimPlaylistSection.style.display = 'none';
   }
+  updateGameConfigBar();
 });
+
+/** Extract the clean playlist name from a <select> option. */
+function getPlaylistName(opt) {
+  return opt ? (opt.dataset.name || null) : null;
+}
 
 /** Build the auto-generated playlist name, truncated to fit Spotify's 100-char limit. */
 function buildTrimmedPlaylistName(sourceName) {
@@ -273,6 +294,7 @@ setupBtn.addEventListener('click', async () => {
     setAlert(setupMsg, `✓ ${data.message} Players can now join via the link or QR code.`, 'success');
     updateGameLinkDisplay();
     updateQrDisplayLink();
+    updateGameConfigBar();
 
     // Join the new game room
     socket.emit('admin:join', { googleId: currentAdminId });
@@ -386,6 +408,7 @@ generateBtn.addEventListener('click', async () => {
     renderCardList(data.cards);
     updateGameLinkDisplay();
     updateQrDisplayLink();
+    updateGameConfigBar();
 
     // Join the new game room
     socket.emit('admin:join', { googleId: currentAdminId });
@@ -443,6 +466,7 @@ function addCardItem(c) {
 function updatePlayerCount() {
   const count = cardListEl.querySelectorAll('.player-list-item').length;
   playerCountEl.textContent = `(${count} player${count !== 1 ? 's' : ''})`;
+  updateGameConfigBar();
 }
 
 async function kickPlayer(cardId) {
@@ -484,12 +508,12 @@ endBtn.addEventListener('click', async () => {
 
 resetBtn.addEventListener('click', async () => {
   if (!confirm(
-    'Reset game progress?\n\n' +
+    'Play another round?\n\n' +
     '• Played songs and winners will be cleared\n' +
-    '• Player links stay valid – existing card boards are kept\n' +
+    '• Everyone keeps their card — links stay valid\n' +
     '• Players\' marked cells will be cleared\n' +
     '• Bingo mode resets to "Any Line"\n\n' +
-    'Note: use "New Game" to wipe everything and invalidate all existing links.'
+    'Use "New Game" if you want to start completely fresh with new cards.'
   )) return;
   await fetch('/api/game/reset', { method: 'POST' });
   playedList.innerHTML  = '';
@@ -499,15 +523,17 @@ resetBtn.addEventListener('click', async () => {
   winnersTable.style.display = 'none';
   noWinnersMsg.style.display = 'block';
   nowPlaying.style.display = 'none';
-  setAlert(gameMsg, 'Round reset. Player links are still valid — boards are unchanged, marked cells cleared.', 'info');
+  optBingoMode.value = 'any-line';
+  updateGameConfigBar();
+  setAlert(gameMsg, '↺ Ready for another round! Player links are still valid — same cards, marked cells cleared.', 'info');
 });
 
 newGameBtn.addEventListener('click', async () => {
   if (!confirm(
     '⚠️ Start a completely new game?\n\n' +
-    '• All cards and player links will be removed\n' +
-    '• All game progress will be lost\n' +
-    '• You will need to set up a new game link and re-send it to players\n\n' +
+    '• All cards will be deleted — players will need new links\n' +
+    '• All game history and winners will be lost\n' +
+    '• You will need to generate a new game link and share it again\n\n' +
     'This cannot be undone.'
   )) return;
   try {
@@ -528,7 +554,9 @@ newGameBtn.addEventListener('click', async () => {
     winnersTable.style.display = 'none';
     noWinnersMsg.style.display = 'block';
     nowPlaying.style.display = 'none';
-    setAlert(gameMsg, '✓ New game ready. Select a playlist and generate a new game link.', 'info');
+    syncOptionCheckboxes({ showSongHistory: true, showNowPlaying: true, showHint: true, strictValidation: true, freeSpace: true, bingoMode: 'any-line' });
+    updateGameConfigBar();
+    setAlert(gameMsg, '✓ Fresh game ready. Select a playlist and generate a new game link.', 'info');
   } catch (err) {
     setAlert(gameMsg, 'Network error: ' + err.message, 'error');
   }
@@ -542,6 +570,19 @@ function updateGameStatus(status) {
   gameStatusEl.className   = `status-pill ${classes[status] || 'status-idle'}`;
   startBtn.disabled = status === 'active';
   endBtn.disabled   = status !== 'active';
+}
+
+function updateGameConfigBar() {
+  const modeLabels = {
+    'any-line':      'Any line',
+    'postage-stamp': 'Postage stamp',
+    'full-board':    'Full board',
+    'x-pattern':     'X pattern',
+  };
+  document.getElementById('cfg-playlist-val').textContent = currentPlaylistName || '—';
+  const playerCount = cardListEl.querySelectorAll('.player-list-item').length;
+  document.getElementById('cfg-players-val').textContent  = playerCount;
+  document.getElementById('cfg-mode-val').textContent     = modeLabels[optBingoMode.value] || optBingoMode.value;
 }
 
 function startEmojiRain(emoji) {
@@ -638,6 +679,7 @@ async function savePlayerOptions() {
   cb.addEventListener('change', savePlayerOptions);
 });
 optBingoMode.addEventListener('change', savePlayerOptions);
+optBingoMode.addEventListener('change', updateGameConfigBar);
 
 // ─── Socket events ────────────────────────────────────────────────────────────
 socket.on('game:state', (state) => {
