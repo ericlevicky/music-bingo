@@ -398,6 +398,50 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
 }
 .qr-close:hover { color: var(--text); }
 
+/* ─── Game config bar (Step 3 summary strip) ─────────────────────────────── */
+#game-config-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem 1.5rem;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: .6rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: .85rem;
+}
+#game-config-bar .cfg-label {
+  color: var(--text-m);
+  margin-right: .2rem;
+}
+
+/* ─── Collapsible details card (Step 4) ─────────────────────────────────── */
+details.card > summary {
+  cursor: pointer;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 0;
+  list-style: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+details.card > summary::-webkit-details-marker { display: none; }
+details.card > summary::before {
+  content: '▸';
+  font-size: 1rem;
+  color: var(--text-m);
+  transition: transform var(--trans);
+}
+details.card[open] > summary::before { content: '▾'; }
+
+/* ─── Section divider (between safe & destructive actions) ──────────────── */
+.section-divider {
+  border: none;
+  border-top: 1px solid #333;
+  margin: .85rem 0;
+}
+
 /* ─── Responsive tweaks ──────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .bingo-cell { font-size: .55rem; padding: .2rem; }
