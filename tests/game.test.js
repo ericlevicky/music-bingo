@@ -20,6 +20,86 @@ function makeCards(n) {
   return Array.from({ length: n }, (_, i) => ({ id: `card-${i}`, number: i + 1 }));
 }
 
+describe('GameState.setCards() – gameId preservation', () => {
+  test('mints a new gameId the first time setCards is called', () => {
+    const game = new GameState();
+    expect(game.gameId).toBeNull();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    expect(game.gameId).not.toBeNull();
+  });
+
+  test('preserves existing gameId when setCards is called again', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    const gameId = game.gameId;
+    game.setCards(makeCards(3), makeSongs(24), 'playlist-2');
+    expect(game.gameId).toBe(gameId);
+  });
+});
+
+describe('GameState.updatePlaylist()', () => {
+  test('updates playlistSongs and playlistId without changing gameId or cards', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    const gameId = game.gameId;
+
+    const newSongs = makeSongs(30);
+    game.updatePlaylist(newSongs, 'playlist-2');
+
+    expect(game.gameId).toBe(gameId);
+    expect(game.cards).toHaveLength(2);
+    expect(game.playlistSongs).toHaveLength(30);
+    expect(game.playlistId).toBe('playlist-2');
+  });
+
+  test('throws when trying to change playlist while game is active', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+    expect(() => game.updatePlaylist(makeSongs(24), 'playlist-2')).toThrow();
+  });
+
+  test('is allowed when game has ended', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+    game.end();
+    expect(() => game.updatePlaylist(makeSongs(24), 'playlist-2')).not.toThrow();
+  });
+
+  test('is allowed when game is idle', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    expect(() => game.updatePlaylist(makeSongs(24), 'playlist-2')).not.toThrow();
+  });
+});
+
+describe('GameState.newGame()', () => {
+  test('clears gameId, cards, playlistSongs and status', () => {
+    const game = new GameState();
+    game.setCards(makeCards(3), makeSongs(24), 'playlist-1');
+    game.start();
+    game.newGame();
+
+    expect(game.gameId).toBeNull();
+    expect(game.cards).toHaveLength(0);
+    expect(game.playlistSongs).toHaveLength(0);
+    expect(game.playlistId).toBeNull();
+    expect(game.status).toBe('idle');
+  });
+
+  test('after newGame, setCards mints a fresh gameId', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    const firstId = game.gameId;
+    game.newGame();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-2');
+    expect(game.gameId).not.toBe(firstId);
+    expect(game.gameId).not.toBeNull();
+  });
+});
+
+
 describe('GameState.addCard()', () => {
   test('appends a card to the existing card list', () => {
     const game = new GameState();

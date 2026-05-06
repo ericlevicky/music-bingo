@@ -89,6 +89,7 @@
       <!-- Primary action: Generate game link -->
       <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; margin-bottom:.75rem;">
         <button class="btn btn-green" id="setup-btn">🔗 Generate Game Link</button>
+        <button class="btn btn-grey" id="change-playlist-btn" style="display:none;" title="Switch to a different playlist without invalidating existing player links">↺ Change Playlist</button>
       </div>
       <div id="setup-msg"></div>
 
@@ -112,8 +113,8 @@
         </summary>
         <div style="margin-top:.85rem;">
           <p style="font-size:.82rem; margin-bottom:.85rem;">
-            ⚠️ <strong>Generating new cards invalidates all existing player links.</strong>
-            Use <em>Reset</em> (Step 4) to replay the same boards without re-sending links.
+            Pre-generate cards linked to specific email addresses or phone numbers and send the links directly.
+            Existing links are preserved when you re-generate with the same contact list — only the card content changes.
           </p>
           <div class="form-group section" style="margin-bottom:1rem;">
             <label for="contacts-input">
@@ -205,11 +206,16 @@
         </div>
       </div>
 
-      <div style="display:flex; gap:.75rem; flex-wrap:wrap;">
+      <div style="display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
         <button class="btn btn-green" id="start-btn">▶ Start Game</button>
         <button class="btn btn-red"   id="end-btn"   disabled>⏹ End Game</button>
-        <button class="btn btn-grey"  id="reset-btn">↺ Reset</button>
+        <button class="btn btn-grey"  id="reset-btn" title="Clear play history and winners. Keep all cards and links — replay the same boards.">↺ Reset Round</button>
+        <button class="btn btn-grey"  id="new-game-btn" title="Clear everything and start a completely new game. All existing player links will stop working.">🗑 New Game</button>
       </div>
+      <p style="font-size:.78rem; color:var(--text-m); margin-top:.6rem; margin-bottom:0;">
+        <strong>Reset Round</strong> – clears play history &amp; winners; player links and card boards stay valid.<br>
+        <strong>New Game</strong> – wipes everything; existing player links will no longer work.
+      </p>
       <div id="game-msg" style="margin-top:.85rem;"></div>
     </div>
 
