@@ -84,6 +84,7 @@ const store     = require('./src/store');
 const { generateCards, generateCard, generateGrid, detectContactType, validateBingo } = require('./src/bingo');
 const { buildAuthUrl, exchangeCode, extractPlaylistId } = require('./src/spotify');
 const QRCode = require('qrcode');
+const EMOJI_PATTERN = /\p{Extended_Pictographic}/u;
 
 /** Maximum number of cards per generate request (memory safety). */
 const MAX_CARDS = 500;
@@ -813,14 +814,14 @@ io.on('connection', (socket) => {
     const { admin, card } = result;
     if (!admin.game || admin.game.gameId !== gameId) return;
 
+    const winner = admin.game.winners.find((w) => w.cardId === cardId);
+    if (!winner) return;
     const winnerIdx = admin.game.winners.findIndex((w) => w.cardId === cardId);
-    if (winnerIdx === -1) return;
-    const winner = admin.game.winners[winnerIdx];
     const isLikelyEmoji = (
       typeof celebrationEmoji === 'string' &&
       celebrationEmoji.trim().length > 0 &&
       celebrationEmoji.length <= 16 &&
-      /\p{Extended_Pictographic}/u.test(celebrationEmoji)
+      EMOJI_PATTERN.test(celebrationEmoji)
     );
     const safeEmoji = isLikelyEmoji ? celebrationEmoji : '🎊';
 
