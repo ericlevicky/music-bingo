@@ -167,6 +167,7 @@ async function loadCard() {
     const res = await fetch(`/api/card/${cardId}`);
     if (!res.ok) {
       setAlert('Card not found. Check the link and try again.', 'error');
+      cardSection.style.display = 'none';
       return;
     }
     card = await res.json();
@@ -187,6 +188,7 @@ async function loadCard() {
     }
   } catch (err) {
     setAlert('Failed to load card: ' + err.message, 'error');
+    cardSection.style.display = 'none';
   }
 }
 
