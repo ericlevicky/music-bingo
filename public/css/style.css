@@ -484,7 +484,7 @@ details.card[open] > summary::before { content: '▾'; }
   position: absolute;
   top: 42px;
   white-space: nowrap;
-  font-size: .68rem;
+  font-size: .75rem;
   color: var(--text-m);
   font-weight: 500;
   letter-spacing: .02em;
