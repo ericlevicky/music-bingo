@@ -870,10 +870,15 @@ details.inline-collapse > .collapse-body {
 @media (orientation: landscape) and (min-width: 600px) {
   .card-page #card-section {
     display: grid !important;
-    grid-template-columns: 1fr auto;
+    /* Use a fixed grid size derived from viewport height so the board
+       never shifts when now-playing text changes.  The BINGO button
+       column is auto-sized. */
+    grid-template-columns: calc(100dvh - 160px) auto;
     grid-template-rows: auto auto 1fr auto auto;
-    gap: 0 1rem;
+    gap: 0 1.5rem;
     min-height: calc(100dvh - 44px);
+    max-width: 960px;
+    margin: 0 auto;
     align-items: start;
   }
 
@@ -885,14 +890,14 @@ details.inline-collapse > .collapse-body {
   .card-page .card-status-row {
     grid-column: 1 / -1;
   }
-  /* BINGO header + grid sit in the left column, sized to viewport height */
+  /* BINGO header + grid sit in the left column with a stable width */
   .card-page .bingo-header {
     grid-column: 1;
-    max-width: min(100%, calc(100dvh - 160px));
+    width: 100%;
   }
   .card-page .bingo-grid {
     grid-column: 1;
-    max-width: min(100%, calc(100dvh - 160px));
+    width: 100%;
     grid-auto-rows: 1fr;
   }
   /* BINGO bar sits to the right of the grid */
