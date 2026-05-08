@@ -7,7 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body>
+<body class="card-page">
   <nav>
     <span class="logo">🎵 Music Bingo</span>
     <a href="/">Home</a>
@@ -35,7 +35,7 @@
     <div id="card-section" style="display:none;">
 
       <!-- Now playing -->
-      <div id="now-playing" style="display:none; margin-bottom:1rem;">
+      <div id="now-playing" style="display:none;">
         <img id="np-art" src="" alt="" />
         <div class="np-info">
           <div class="np-title">
@@ -46,7 +46,7 @@
         </div>
       </div>
 
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+      <div class="card-status-row">
         <div>
           <h2 id="card-heading">
             <span id="card-number"></span>
@@ -81,7 +81,7 @@
         <button id="bingo-btn" disabled>BINGO!</button>
       </div>
 
-      <!-- Played songs reference -->
+      <!-- Played songs reference (scrollable below the fold) -->
       <div id="songs-history" class="card" style="margin-top:1.5rem;">
         <h3>Songs played so far</h3>
         <ol id="played-list" style="padding-left:1.25rem; line-height:1.9; margin-top:.5rem; color:var(--text-m); font-size:.9rem;">
