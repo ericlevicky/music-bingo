@@ -646,7 +646,7 @@ function setAlert(el, msg, type) {
     const alertEl = el.querySelector('.alert');
     setTimeout(() => {
       alertEl.classList.add('alert-fade-out');
-      alertEl.addEventListener('transitionend', () => { el.innerHTML = ''; });
+      alertEl.addEventListener('transitionend', () => { el.innerHTML = ''; }, { once: true });
     }, 4000);
   }
 }
