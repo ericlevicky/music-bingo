@@ -673,8 +673,6 @@ details.inline-collapse > .collapse-body {
   flex-shrink: 0;
 }
 .card-page .container {
-  /* Override the inline padding-bottom:7rem that was set for the old layout */
-  padding-bottom: 0 !important;
   padding-top: .5rem !important;
 }
 
@@ -813,24 +811,6 @@ details.inline-collapse > .collapse-body {
   min-height: 0;
 }
 
-/* BINGO bar: inline within page flow instead of fixed overlay.
-   This prevents it from covering the grid and lets the flex layout
-   size things correctly. */
-.card-page #bingo-bar {
-  position: static;
-  background: none;
-  padding: .25rem 0 .15rem;
-  pointer-events: auto;
-}
-.card-page #bingo-bar > * { pointer-events: auto; }
-.card-page #bingo-bar #bingo-btn {
-  font-size: 1.15rem;
-  padding: .5rem 2rem;
-  margin: 0;
-  min-width: 200px;         /* prevent width jumping on text change */
-  text-align: center;
-}
-
 /* Bingo message: constrain width so validation text doesn't shift layout */
 .card-page #bingo-bar #bingo-msg {
   max-width: 100%;
@@ -845,75 +825,21 @@ details.inline-collapse > .collapse-body {
 
 /* ── Portrait: fill the viewport height ─────────────────────────────────── */
 @media (orientation: portrait) {
-  .card-page #card-section {
-    display: flex !important;
-    flex-direction: column;
-    /* Fill from current position to bottom of viewport.
-       Use 100dvh minus the nav (~40px) and top padding (~8px). */
-    min-height: calc(100dvh - 48px);
-  }
-
   /* Let the grid stretch to fill available space */
   .card-page .bingo-grid {
-    flex: 1;
-    /* Grid auto-rows fills evenly across the available height */
     grid-auto-rows: 1fr;
-  }
-
-  /* Push songs-history out of the main viewport flow */
-  .card-page #songs-history {
-    flex-shrink: 0;
   }
 }
 
-/* ── Landscape: side-by-side layout on wider screens ────────────────────── */
+/* ── Landscape: cap grid width so card fits on screen ───────────────────── */
 @media (orientation: landscape) and (min-width: 600px) {
-  .card-page #card-section {
-    display: grid !important;
-    /* Use a fixed grid size derived from viewport height so the board
-       never shifts when now-playing text changes.  The BINGO button
-       column is auto-sized. */
-    grid-template-columns: calc(100dvh - 160px) auto;
-    grid-template-rows: auto auto 1fr auto auto;
-    gap: 0 1.5rem;
-    min-height: calc(100dvh - 44px);
-    max-width: 960px;
-    margin: 0 auto;
-    align-items: start;
-  }
-
-  /* Now-playing spans the full width */
-  .card-page #now-playing {
-    grid-column: 1 / -1;
-  }
-  /* Status row spans full width */
-  .card-page .card-status-row {
-    grid-column: 1 / -1;
-  }
-  /* BINGO header + grid sit in the left column with a stable width */
-  .card-page .bingo-header {
-    grid-column: 1;
-    width: 100%;
-  }
   .card-page .bingo-grid {
-    grid-column: 1;
-    width: 100%;
-    grid-auto-rows: 1fr;
+    max-width: calc(100dvh - 120px);
+    margin: 0 auto;
   }
-  /* BINGO bar sits to the right of the grid */
-  .card-page #bingo-bar {
-    grid-column: 2;
-    grid-row: 3 / 5;
-    align-self: center;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .card-page #bingo-bar #bingo-btn {
-    writing-mode: horizontal-tb;
-  }
-  /* Songs history below everything */
-  .card-page #songs-history {
-    grid-column: 1 / -1;
+  .card-page .bingo-header {
+    max-width: calc(100dvh - 120px);
+    margin: 0 auto;
   }
 }
 
