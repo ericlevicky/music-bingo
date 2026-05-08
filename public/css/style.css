@@ -804,6 +804,7 @@ details.inline-collapse > .collapse-body {
    to fill whatever space is available between the header and BINGO bar. */
 .card-page .bingo-grid {
   gap: 3px;
+  grid-auto-rows: 1fr;
 }
 .card-page .bingo-cell {
   aspect-ratio: auto;
@@ -821,14 +822,6 @@ details.inline-collapse > .collapse-body {
 /* Songs history: sits below the fold, scrollable if needed */
 .card-page #songs-history {
   margin-top: .75rem;
-}
-
-/* ── Portrait: fill the viewport height ─────────────────────────────────── */
-@media (orientation: portrait) {
-  /* Let the grid stretch to fill available space */
-  .card-page .bingo-grid {
-    grid-auto-rows: 1fr;
-  }
 }
 
 /* ── Landscape: cap grid width so card fits on screen ───────────────────── */
