@@ -22,38 +22,70 @@
   </nav>
 
   <div class="container" style="padding-top:1.5rem; padding-bottom:3rem;">
-    <h1>Admin Dashboard</h1>
 
-    <!-- Status bar -->
-    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.75rem; flex-wrap:wrap;">
-      <span>Game status:</span>
+    <!-- Dashboard header row -->
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; margin-bottom:.5rem;">
+      <h1 style="margin-bottom:0;">Admin Dashboard</h1>
       <span id="game-status" class="status-pill status-idle">Idle</span>
-      <span id="spotify-badge" style="font-size:.85rem;"></span>
+    </div>
+
+    <!-- Step progress bar -->
+    <div class="step-progress" id="step-progress">
+      <div class="step-dot" id="step-dot-1" data-step="1">
+        1
+        <span class="step-label">Spotify</span>
+      </div>
+      <div class="step-connector" id="step-conn-1"></div>
+      <div class="step-dot" id="step-dot-2" data-step="2">
+        2
+        <span class="step-label">Playlist</span>
+      </div>
+      <div class="step-connector" id="step-conn-2"></div>
+      <div class="step-dot" id="step-dot-3" data-step="3">
+        3
+        <span class="step-label">Share</span>
+      </div>
+      <div class="step-connector" id="step-conn-3"></div>
+      <div class="step-dot" id="step-dot-4" data-step="4">
+        4
+        <span class="step-label">Play</span>
+      </div>
     </div>
 
     <div id="global-alert"></div>
 
     <!-- ── Step 1: Spotify auth ─────────────────────────────────── -->
     <div class="section card" id="spotify-section">
-      <h2>1 · Connect Spotify</h2>
+      <div class="step-header">
+        <span class="step-badge">1</span>
+        <h2>Connect Spotify</h2>
+        <span class="step-check" id="step1-check">✅</span>
+      </div>
       <p style="margin-bottom:1rem;">
         Authorise this app to read playlists and currently-playing track from your Spotify account.
       </p>
       <div id="spotify-status-msg"></div>
-      <a href="/auth/spotify" class="btn btn-green" id="spotify-btn">
-        🎧 Connect with Spotify
-      </a>
+      <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <a href="/auth/spotify" class="btn btn-green" id="spotify-btn">
+          🎧 Connect with Spotify
+        </a>
+        <span id="spotify-badge" style="font-size:.85rem;"></span>
+      </div>
     </div>
 
-    <!-- ── Step 2: Game Setup ───────────────────────────────────── -->
-    <div class="section card">
-      <h2>2 · Game Setup</h2>
+    <!-- ── Step 2: Playlist Selection ───────────────────────────── -->
+    <div class="section card" id="playlist-section">
+      <div class="step-header">
+        <span class="step-badge">2</span>
+        <h2>Choose Playlist</h2>
+        <span class="step-check" id="step2-check">✅</span>
+      </div>
       <p style="margin-bottom:1rem; font-size:.85rem;">
-        Select a playlist and generate a game link. Players join by scanning the QR code or opening the link — no pre-assigning required.
+        Pick a Spotify playlist that will populate the bingo cards. Need fewer songs? Trim it down.
       </p>
 
       <!-- Playlist picker -->
-      <div class="form-group section" style="margin-bottom:1rem;">
+      <div class="form-group" style="margin-bottom:1rem;">
         <label for="playlist-select">Spotify Playlist</label>
         <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
           <select id="playlist-select" style="flex:1; min-width:200px; padding:.6rem .85rem;
@@ -66,28 +98,42 @@
         <div id="playlist-info" style="font-size:.82rem; color:var(--text-m); margin-top:.4rem;"></div>
       </div>
 
-      <!-- Trimmed playlist creator -->
-      <div id="trim-playlist-section" style="display:none; background:var(--surface2); border-radius:var(--radius); padding:1rem; margin-bottom:1rem;">
-        <h3 style="margin-bottom:.6rem; font-size:1rem;">✂️ Create Trimmed Playlist</h3>
-        <p style="font-size:.82rem; margin-bottom:.75rem;">
-          Create a new Spotify playlist by randomly picking songs from the selected one.
-          The original playlist is never modified. The new playlist will be saved to your Spotify account and selected automatically.
-        </p>
-        <div style="font-size:.82rem; color:var(--text-m); margin-bottom:.75rem;">
-          New playlist name: <span id="trim-playlist-name-preview" style="color:var(--text); font-style:italic;"></span>
-        </div>
-        <div class="form-row" style="align-items:flex-end; gap:.75rem; flex-wrap:wrap;">
-          <div class="form-group" style="max-width:200px;">
-            <label for="trim-song-count">Number of songs (24–500)</label>
-            <input type="number" id="trim-song-count" value="30" min="24" max="500" />
+      <!-- Trimmed playlist creator (collapsible) -->
+      <details id="trim-playlist-section" class="inline-collapse" style="display:none; margin-bottom:1rem;">
+        <summary>✂️ Create Trimmed Playlist</summary>
+        <div class="collapse-body">
+          <p style="font-size:.82rem; margin-bottom:.75rem;">
+            Create a new Spotify playlist by randomly picking songs from the selected one.
+            The original playlist is never modified. The new playlist will be saved to your Spotify account and selected automatically.
+          </p>
+          <div style="font-size:.82rem; color:var(--text-m); margin-bottom:.75rem;">
+            New playlist name: <span id="trim-playlist-name-preview" style="color:var(--text); font-style:italic;"></span>
           </div>
-          <button class="btn btn-grey" id="trim-btn" style="flex-shrink:0;">Create &amp; Select</button>
+          <div class="form-row" style="align-items:flex-end; gap:.75rem; flex-wrap:wrap;">
+            <div class="form-group" style="max-width:200px;">
+              <label for="trim-song-count">Number of songs (24–500)</label>
+              <input type="number" id="trim-song-count" value="30" min="24" max="500" />
+            </div>
+            <button class="btn btn-grey" id="trim-btn" style="flex-shrink:0;">Create &amp; Select</button>
+          </div>
+          <div id="trim-msg" style="margin-top:.6rem;"></div>
         </div>
-        <div id="trim-msg" style="margin-top:.6rem;"></div>
+      </details>
+    </div>
+
+    <!-- ── Step 3: Generate & Share ─────────────────────────────── -->
+    <div class="section card" id="share-section">
+      <div class="step-header">
+        <span class="step-badge">3</span>
+        <h2>Generate &amp; Share</h2>
+        <span class="step-check" id="step3-check">✅</span>
       </div>
+      <p style="margin-bottom:1rem; font-size:.85rem;">
+        Generate a game link and share it with players. Anyone with the link can join — no pre-assigning required.
+      </p>
 
       <!-- Primary action: Generate game link -->
-      <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; margin-bottom:.75rem;">
+      <div class="action-group" style="margin-bottom:.75rem;">
         <button class="btn btn-green" id="setup-btn">🔗 Generate Game Link</button>
         <button class="btn btn-grey" id="change-playlist-btn" style="display:none;" title="Switch to a different playlist without invalidating existing player links">↺ Change Playlist</button>
       </div>
@@ -107,11 +153,9 @@
       </div>
 
       <!-- Optional: Pre-assign cards to contacts -->
-      <details id="contacts-details" style="margin-top:1.25rem;">
-        <summary style="cursor:pointer; font-size:.9rem; font-weight:600; color:var(--text-m); user-select:none; padding:.35rem 0;">
-          ▸ Optional: Pre-assign cards to contacts
-        </summary>
-        <div style="margin-top:.85rem;">
+      <details id="contacts-details" class="inline-collapse" style="margin-top:1.25rem;">
+        <summary>📇 Optional: Pre-assign cards to contacts</summary>
+        <div class="collapse-body">
           <p style="font-size:.82rem; margin-bottom:.85rem;">
             Pre-generate cards linked to specific email addresses or phone numbers and send the links directly.
             Existing links are preserved when you re-generate with the same contact list — only the card content changes.
@@ -150,9 +194,12 @@
       </div>
     </div>
 
-    <!-- ── Step 3: Game control ─────────────────────────────────── -->
-    <div class="section card">
-      <h2>3 · Game Control</h2>
+    <!-- ── Step 4: Game Control ──────────────────────────────────── -->
+    <div class="section card" id="control-section">
+      <div class="step-header">
+        <span class="step-badge">4</span>
+        <h2>Game Control</h2>
+      </div>
 
       <!-- Config summary bar -->
       <div id="game-config-bar">
@@ -174,28 +221,33 @@
       </div>
 
       <!-- Start / End -->
-      <div style="display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
+      <div class="action-group" style="margin-bottom:.75rem;">
         <button class="btn btn-green" id="start-btn">▶ Start Game</button>
         <button class="btn btn-red"   id="end-btn"   disabled>⏹ End Game</button>
-      </div>
-
-      <hr class="section-divider" />
-
-      <!-- Play Again / New Game -->
-      <div style="display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
+        <span class="action-group-divider"></span>
         <button class="btn btn-grey" id="reset-btn" title="Replay with the same cards — everyone keeps their card link">↺ Play Again</button>
-        <button class="btn btn-red"  id="new-game-btn" title="Wipe everything and start fresh — all player links will stop working">⚠️ New Game</button>
       </div>
-      <p style="font-size:.78rem; color:var(--text-m); margin-top:.6rem; margin-bottom:0;">
-        <strong>Play Again</strong> – clears played songs &amp; winners; everyone keeps their card and link.<br>
-        <strong>New Game</strong> – removes all cards and links; everyone will need a new link to play.
+
+      <p style="font-size:.78rem; color:var(--text-m); margin-top:.25rem; margin-bottom:0;">
+        <strong>Play Again</strong> – clears played songs &amp; winners; everyone keeps their card and link.
       </p>
+
+      <!-- Danger zone: New Game -->
+      <div class="danger-zone">
+        <div class="danger-zone-title">⚠️ Danger Zone</div>
+        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+          <p style="flex:1; min-width:200px; font-size:.82rem; margin:0;">
+            <strong>New Game</strong> removes all cards and links. Everyone will need a new link to play. This cannot be undone.
+          </p>
+          <button class="btn btn-red" id="new-game-btn" style="flex-shrink:0;">⚠️ New Game</button>
+        </div>
+      </div>
       <div id="game-msg" style="margin-top:.85rem;"></div>
     </div>
 
-    <!-- ── Step 4: Player screen options (advanced) ─────────────── -->
+    <!-- ── Player screen options (advanced) ─────────────────────── -->
     <details class="section card" id="player-options-details">
-      <summary>4 · Player Screen Options</summary>
+      <summary>Player Screen Options</summary>
       <div style="margin-top:.85rem;">
         <p style="margin-bottom:.85rem;">Control what players see on their bingo card screen.</p>
         <div style="display:flex; flex-direction:column; gap:.65rem;">
@@ -238,7 +290,7 @@
     <!-- ── Played songs & winners ──────────────────────────────── -->
     <div class="grid-2col">
       <div class="section card">
-        <h2>Played Songs</h2>
+        <h2>🎵 Played Songs</h2>
         <p id="no-songs-msg">No songs played yet.</p>
         <ol id="played-list" style="padding-left:1.25rem; line-height:1.8; display:none;"></ol>
       </div>
