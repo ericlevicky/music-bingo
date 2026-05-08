@@ -277,7 +277,18 @@ bingoBtn.addEventListener('click', async () => {
 
   // If this card has already won, retrigger the celebration locally.
   if (winnerData) {
-    showWinCelebration(playerName, winnerData.cardNumber, winnerData.rank, winnerData.celebrationEmoji);
+    if (card && card.gameId) {
+      socket.emit('player:celebrate', {
+        gameId: card.gameId,
+        cardId,
+        playerName,
+        cardNumber: winnerData.cardNumber,
+        rank: winnerData.rank,
+        celebrationEmoji: winnerData.celebrationEmoji,
+      });
+    } else {
+      showWinCelebration(playerName, winnerData.cardNumber, winnerData.rank, winnerData.celebrationEmoji);
+    }
     return;
   }
 
@@ -421,6 +432,10 @@ socket.on('song:paused', (data = {}) => {
 });
 
 socket.on('bingo:claimed', (w) => {
+  showWinCelebration(w.playerName, w.cardNumber, w.rank, w.celebrationEmoji);
+});
+
+socket.on('bingo:celebrated', (w) => {
   showWinCelebration(w.playerName, w.cardNumber, w.rank, w.celebrationEmoji);
 });
 

@@ -801,6 +801,33 @@ io.on('connection', (socket) => {
       socket.emit('game:state', admin.game.toJSON());
     }
   });
+
+  /**
+   * Winner replay celebration so all connected players see the animation again.
+   * Payload: { gameId, cardId, playerName, cardNumber, rank, celebrationEmoji }
+   */
+  socket.on('player:celebrate', ({ gameId, cardId, playerName, cardNumber, rank, celebrationEmoji } = {}) => {
+    if (!gameId || !cardId) return;
+    const result = store.findCard(cardId);
+    if (!result) return;
+    const { admin, card } = result;
+    if (!admin.game || admin.game.gameId !== gameId) return;
+
+    const winnerIdx = admin.game.winners.findIndex((w) => w.cardId === cardId);
+    if (winnerIdx === -1) return;
+    const winner = admin.game.winners[winnerIdx];
+    const safeEmoji = (typeof celebrationEmoji === 'string' && celebrationEmoji.trim().length > 0 && celebrationEmoji.length <= 8)
+      ? celebrationEmoji
+      : '🎊';
+
+    io.to(`game:${gameId}`).emit('bingo:celebrated', {
+      cardId,
+      playerName: winner.playerName || playerName || card.contact?.value || 'Winner',
+      cardNumber: winner.cardNumber || card.number || cardNumber,
+      rank: winnerIdx + 1 || rank || 1,
+      celebrationEmoji: safeEmoji,
+    });
+  });
 });
 
 // ─── Keep-alive ping (Render free tier) ──────────────────────────────────────
