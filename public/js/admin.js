@@ -305,6 +305,9 @@ setupBtn.addEventListener('click', async () => {
     updateGameConfigBar();
     updateStepProgress();
 
+    // Smooth-scroll so the admin sees the generated game link
+    gameLinkSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
     // Join the new game room
     socket.emit('admin:join', { googleId: currentAdminId });
   } catch (err) {
@@ -639,6 +642,13 @@ function addPlayedSong(song) {
 function setAlert(el, msg, type) {
   if (!msg) { el.innerHTML = ''; return; }
   el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  if (type === 'success') {
+    const alertEl = el.querySelector('.alert');
+    setTimeout(() => {
+      alertEl.classList.add('alert-fade-out');
+      alertEl.addEventListener('transitionend', () => { el.innerHTML = ''; });
+    }, 4000);
+  }
 }
 
 function escHtml(str) {
