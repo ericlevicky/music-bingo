@@ -277,7 +277,7 @@ function addPlayedSong(song) {
 bingoBtn.addEventListener('click', async () => {
   if (!card || gameStatus !== 'active') return;
 
-  // If this card has already won, retrigger the celebration locally.
+  // If this card has already won, retrigger the emoji rain only (no overlay).
   if (winnerData) {
     if (card && card.gameId) {
       socket.emit('player:celebrate', {
@@ -288,7 +288,7 @@ bingoBtn.addEventListener('click', async () => {
         celebrationEmoji: winnerData.celebrationEmoji,
       });
     } else {
-      showWinCelebration(playerName, winnerData.cardNumber, winnerData.rank, winnerData.celebrationEmoji);
+      startEmojiRain(winnerData.celebrationEmoji || '🎊');
     }
     return;
   }
@@ -437,7 +437,8 @@ socket.on('bingo:claimed', (w) => {
 });
 
 socket.on('bingo:celebrated', (w) => {
-  showWinCelebration(w.playerName, w.cardNumber, w.rank, w.celebrationEmoji);
+  // Re-celebrations only show the emoji rain, not the full overlay
+  startEmojiRain(w.celebrationEmoji || '🎊');
 });
 
 socket.on('player:kicked', ({ cardId: kickedId }) => {

@@ -146,6 +146,7 @@ input:focus { border-color: var(--green); }
   align-items: center;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  overflow: hidden;
 }
 #now-playing img {
   width: 56px; height: 56px;
@@ -153,8 +154,12 @@ input:focus { border-color: var(--green); }
   object-fit: cover;
   flex-shrink: 0;
 }
-#now-playing .np-info .np-title { font-weight: 700; font-size: 1rem; }
-#now-playing .np-info .np-artist { font-size: .85rem; color: var(--text-m); }
+#now-playing .np-info {
+  min-width: 0;
+  overflow: hidden;
+}
+#now-playing .np-info .np-title { font-weight: 700; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#now-playing .np-info .np-artist { font-size: .85rem; color: var(--text-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pulse-dot {
   width: 10px; height: 10px;
   border-radius: 50%;
@@ -682,9 +687,71 @@ details.inline-collapse > .collapse-body {
   flex-wrap: wrap;
   gap: .25rem;
 }
+.card-status-row > div:first-child {
+  min-width: 0;           /* allow flex child to shrink */
+  overflow: hidden;
+}
 .card-page .card-status-row h2 {
   font-size: 1.1rem;
   margin-bottom: .15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Player card page: extracted inline styles ──────────────────────────── */
+.rename-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: .75rem;
+  color: var(--text-m);
+  margin-left: .5rem;
+  padding: .2rem .4rem;
+  border-radius: 6px;
+}
+.rename-form         { display: none; margin-top: .4rem; }
+.rename-form-row     { gap: .5rem; flex-wrap: nowrap; }
+.rename-input        { max-width: 180px; font-size: .85rem; }
+.rename-save-btn     { padding: .35rem .85rem !important; font-size: .8rem !important; }
+.rename-cancel-btn   { padding: .35rem .7rem  !important; font-size: .8rem !important; }
+.rename-msg          { margin-top: .3rem; }
+
+.card-status-left {
+  min-width: 0;
+  overflow: hidden;
+}
+.card-status-pills {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  flex-wrap: wrap;
+}
+.card-status-right {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+.marked-count-label {
+  color: var(--text-m);
+  font-size: .85rem;
+  white-space: nowrap;
+}
+
+.bingo-msg { text-align: center; }
+
+.songs-history-card { margin-top: 1.5rem; }
+.played-list {
+  padding-left: 1.25rem;
+  line-height: 1.9;
+  margin-top: .5rem;
+  color: var(--text-m);
+  font-size: .9rem;
+}
+.no-songs-placeholder {
+  list-style: none;
+  color: var(--text-m);
 }
 .card-page .status-pill {
   font-size: .7rem;
@@ -696,6 +763,11 @@ details.inline-collapse > .collapse-body {
   padding: .45rem .75rem;
   margin-bottom: .4rem;
   gap: .6rem;
+  overflow: hidden;
+}
+.card-page #now-playing .np-info {
+  min-width: 0;        /* allow flex child to shrink below content size */
+  overflow: hidden;
 }
 .card-page #now-playing img {
   width: 36px;
@@ -705,6 +777,13 @@ details.inline-collapse > .collapse-body {
 .card-page #now-playing .np-info .np-title {
   font-size: .85rem;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+}
+.card-page #now-playing .np-info .np-title #np-title {
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -748,6 +827,15 @@ details.inline-collapse > .collapse-body {
   font-size: 1.15rem;
   padding: .5rem 2rem;
   margin: 0;
+  min-width: 200px;         /* prevent width jumping on text change */
+  text-align: center;
+}
+
+/* Bingo message: constrain width so validation text doesn't shift layout */
+.card-page #bingo-bar #bingo-msg {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Songs history: sits below the fold, scrollable if needed */
