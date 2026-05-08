@@ -292,6 +292,9 @@ setupBtn.addEventListener('click', async () => {
 
     currentGameId = data.gameId;
     setAlert(setupMsg, `✓ ${data.message} Players can now join via the link or QR code.`, 'success');
+    cardListEl.replaceChildren();
+    updatePlayerCount();
+    cardListSection.style.display = 'none';
     updateGameLinkDisplay();
     updateQrDisplayLink();
     updateGameConfigBar();
