@@ -816,9 +816,13 @@ io.on('connection', (socket) => {
     const winnerIdx = admin.game.winners.findIndex((w) => w.cardId === cardId);
     if (winnerIdx === -1) return;
     const winner = admin.game.winners[winnerIdx];
-    const safeEmoji = (typeof celebrationEmoji === 'string' && celebrationEmoji.trim().length > 0 && celebrationEmoji.length <= 8)
-      ? celebrationEmoji
-      : '🎊';
+    const isLikelyEmoji = (
+      typeof celebrationEmoji === 'string' &&
+      celebrationEmoji.trim().length > 0 &&
+      celebrationEmoji.length <= 16 &&
+      /\p{Extended_Pictographic}/u.test(celebrationEmoji)
+    );
+    const safeEmoji = isLikelyEmoji ? celebrationEmoji : '🎊';
 
     io.to(`game:${gameId}`).emit('bingo:celebrated', {
       cardId,

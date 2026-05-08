@@ -283,7 +283,6 @@ bingoBtn.addEventListener('click', async () => {
         cardId,
         playerName,
         cardNumber: winnerData.cardNumber,
-        rank: winnerData.rank,
         celebrationEmoji: winnerData.celebrationEmoji,
       });
     } else {
