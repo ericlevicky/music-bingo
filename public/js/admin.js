@@ -112,6 +112,7 @@ async function loadProfile() {
       }
     }
     updateGameConfigBar();
+    updateStepProgress();
 
     // Join the admin's game room
     if (data.game.gameId) {
@@ -177,6 +178,7 @@ playlistSelect.addEventListener('change', () => {
     trimPlaylistSection.style.display = 'none';
     currentPlaylistName = null;
     updateGameConfigBar();
+    updateStepProgress();
     return;
   }
   currentPlaylistName = getPlaylistName(opt);
@@ -184,7 +186,9 @@ playlistSelect.addEventListener('change', () => {
   playlistInfo.textContent = `Selected: "${opt.text}"`;
   // Only offer trimming when the playlist has more songs than the 24-song minimum.
   if (trackCount > 24) {
-    trimPlaylistSection.style.display = 'block';
+    trimPlaylistSection.style.display = '';
+    // Auto-expand if playlist has more than 35 songs; collapse otherwise.
+    trimPlaylistSection.open = trackCount > 35;
     // Show auto-generated name preview
     const sourceName = opt.dataset.name || opt.text;
     trimPlaylistNamePreview.textContent = buildTrimmedPlaylistName(sourceName);
@@ -192,6 +196,7 @@ playlistSelect.addEventListener('change', () => {
     trimPlaylistSection.style.display = 'none';
   }
   updateGameConfigBar();
+  updateStepProgress();
 });
 
 /** Extract the clean playlist name from a <select> option. */
@@ -298,6 +303,10 @@ setupBtn.addEventListener('click', async () => {
     updateGameLinkDisplay();
     updateQrDisplayLink();
     updateGameConfigBar();
+    updateStepProgress();
+
+    // Smooth-scroll so the admin sees the generated game link
+    gameLinkSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     // Join the new game room
     socket.emit('admin:join', { googleId: currentAdminId });
@@ -412,6 +421,7 @@ generateBtn.addEventListener('click', async () => {
     updateGameLinkDisplay();
     updateQrDisplayLink();
     updateGameConfigBar();
+    updateStepProgress();
 
     // Join the new game room
     socket.emit('admin:join', { googleId: currentAdminId });
@@ -559,6 +569,7 @@ newGameBtn.addEventListener('click', async () => {
     nowPlaying.style.display = 'none';
     syncOptionCheckboxes({ showSongHistory: true, showNowPlaying: true, showHint: true, strictValidation: true, freeSpace: true, bingoMode: 'any-line' });
     updateGameConfigBar();
+    updateStepProgress();
     setAlert(gameMsg, '✓ Fresh game ready. Select a playlist and generate a new game link.', 'info');
   } catch (err) {
     setAlert(gameMsg, 'Network error: ' + err.message, 'error');
@@ -573,6 +584,7 @@ function updateGameStatus(status) {
   gameStatusEl.className   = `status-pill ${classes[status] || 'status-idle'}`;
   startBtn.disabled = status === 'active';
   endBtn.disabled   = status !== 'active';
+  updateStepProgress();
 }
 
 function updateGameConfigBar() {
@@ -630,6 +642,13 @@ function addPlayedSong(song) {
 function setAlert(el, msg, type) {
   if (!msg) { el.innerHTML = ''; return; }
   el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  if (type === 'success') {
+    const alertEl = el.querySelector('.alert');
+    setTimeout(() => {
+      alertEl.classList.add('alert-fade-out');
+      alertEl.addEventListener('transitionend', () => { el.innerHTML = ''; }, { once: true });
+    }, 4000);
+  }
 }
 
 function escHtml(str) {
@@ -779,6 +798,49 @@ gameQrBtn.addEventListener('click', openQrModal);
 qrClose.addEventListener('click', () => { qrModal.style.display = 'none'; });
 qrModal.addEventListener('click', (e) => { if (e.target === qrModal) qrModal.style.display = 'none'; });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') qrModal.style.display = 'none'; });
+
+// ─── Step progress indicator ──────────────────────────────────────────────────
+function updateStepProgress() {
+  const spotifyConnected = spotifyBadge.innerHTML.includes('✓');
+  const playlistSelected = !!playlistSelect.value;
+  const gameReady        = !!currentGameId;
+  const gameActive       = gameStatusEl.classList.contains('status-active');
+
+  // Step 1: Spotify
+  setStepState(1, spotifyConnected ? 'completed' : 'active');
+  // Step 2: Playlist
+  setStepState(2, !spotifyConnected ? '' : playlistSelected ? 'completed' : 'active');
+  setConnector(1, spotifyConnected);
+  // Step 3: Share / Generate
+  setStepState(3, !playlistSelected ? '' : gameReady ? 'completed' : 'active');
+  setConnector(2, playlistSelected);
+  // Step 4: Play
+  setStepState(4, !gameReady ? '' : gameActive ? 'active' : 'completed');
+  setConnector(3, gameReady);
+
+  // Step check marks
+  toggleCheck('step1-check', spotifyConnected);
+  toggleCheck('step2-check', playlistSelected);
+  toggleCheck('step3-check', gameReady);
+}
+
+function setStepState(step, state) {
+  const dot = document.getElementById(`step-dot-${step}`);
+  if (!dot) return;
+  dot.classList.remove('active', 'completed');
+  if (state) dot.classList.add(state);
+}
+
+function setConnector(idx, done) {
+  const conn = document.getElementById(`step-conn-${idx}`);
+  if (!conn) return;
+  conn.classList.toggle('completed', done);
+}
+
+function toggleCheck(id, show) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('visible', show);
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 loadProfile();

@@ -108,10 +108,34 @@ input:focus { border-color: var(--green); }
   border-radius: var(--radius);
   font-size: .9rem;
   margin-bottom: 1rem;
+  transition: opacity .4s ease;
 }
+.alert.alert-fade-out { opacity: 0; }
 .alert-error   { background: rgba(227,52,47,.2); border: 1px solid var(--red);  color: #ff6b6b; }
 .alert-success { background: rgba(29,185,84,.15); border: 1px solid var(--green); color: var(--green); }
 .alert-info    { background: rgba(255,255,255,.05); border: 1px solid #444; color: var(--text-m); }
+
+/* ─── Loading spinner ────────────────────────────────────────────────────── */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  color: var(--text-m);
+  font-size: .95rem;
+}
+.loading-spinner::before {
+  content: '';
+  width: 36px;
+  height: 36px;
+  border: 3px solid #444;
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ─── Now-playing banner ─────────────────────────────────────────────────── */
 #now-playing {
@@ -414,7 +438,7 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
   margin-right: .2rem;
 }
 
-/* ─── Collapsible details card (Step 4) ─────────────────────────────────── */
+/* ─── Collapsible details card ────────────────────────────────────────── */
 details.card > summary {
   cursor: pointer;
   font-size: 1.4rem;
@@ -435,6 +459,177 @@ details.card > summary::before {
 }
 details.card[open] > summary::before { content: '▾'; }
 
+/* ─── Step progress bar ──────────────────────────────────────────────────── */
+.step-progress {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 2rem;
+  padding: 0 .5rem;
+}
+.step-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--text-m);
+  flex-shrink: 0;
+  transition: all .35s ease;
+  position: relative;
+  z-index: 1;
+}
+.step-dot.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #000;
+  box-shadow: 0 0 12px rgba(29,185,84,.4);
+}
+.step-dot.completed {
+  background: var(--green);
+  border-color: var(--green);
+  color: #000;
+}
+.step-connector {
+  flex: 1;
+  height: 3px;
+  background: #444;
+  transition: background .35s ease;
+}
+.step-connector.completed {
+  background: var(--green);
+}
+.step-label {
+  position: absolute;
+  top: 42px;
+  white-space: nowrap;
+  font-size: .75rem;
+  color: var(--text-m);
+  font-weight: 500;
+  letter-spacing: .02em;
+}
+.step-dot.active .step-label,
+.step-dot.completed .step-label { color: var(--green); }
+
+/* ─── Step section headers ───────────────────────────────────────────────── */
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: .85rem;
+}
+.step-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--green), var(--green-d));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .85rem;
+  font-weight: 800;
+  color: #000;
+  flex-shrink: 0;
+}
+.step-header h2 {
+  margin-bottom: 0;
+  font-size: 1.3rem;
+}
+.step-check {
+  margin-left: auto;
+  font-size: 1.1rem;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.step-check.visible { opacity: 1; }
+
+/* ─── Section card enhancements ──────────────────────────────────────────── */
+.card {
+  transition: border-color .3s ease, box-shadow .3s ease;
+  border: 1.5px solid transparent;
+}
+.card:hover {
+  border-color: rgba(255,255,255,.05);
+}
+.card.section-active {
+  border-color: rgba(29,185,84,.25);
+  box-shadow: 0 0 20px rgba(29,185,84,.08);
+}
+.card.section-done {
+  border-color: rgba(29,185,84,.15);
+}
+
+/* ─── Inline details (trim playlist, contacts) ───────────────────────────── */
+details.inline-collapse > summary {
+  cursor: pointer;
+  font-size: .95rem;
+  font-weight: 600;
+  list-style: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .65rem .85rem;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  color: var(--text);
+  transition: background .2s ease;
+}
+details.inline-collapse > summary:hover { background: #333; }
+details.inline-collapse > summary::-webkit-details-marker { display: none; }
+details.inline-collapse > summary::after {
+  content: '▸';
+  margin-left: auto;
+  font-size: .8rem;
+  color: var(--text-m);
+  transition: transform .2s ease;
+}
+details.inline-collapse[open] > summary::after {
+  content: '▾';
+}
+details.inline-collapse > .collapse-body {
+  padding: 1rem;
+  background: var(--surface2);
+  border-radius: 0 0 var(--radius) var(--radius);
+  margin-top: -2px;
+}
+
+/* ─── Action button group ────────────────────────────────────────────────── */
+.action-group {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.action-group-divider {
+  width: 1px;
+  height: 28px;
+  background: #444;
+  margin: 0 .25rem;
+}
+
+/* ─── Danger zone ────────────────────────────────────────────────────────── */
+.danger-zone {
+  border: 1px solid rgba(227,52,47,.2);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-top: .75rem;
+  background: rgba(227,52,47,.04);
+}
+.danger-zone-title {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--red);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: .75rem;
+}
+
 /* ─── Section divider (between safe & destructive actions) ──────────────── */
 .section-divider {
   border: none;
@@ -452,36 +647,211 @@ details.card[open] > summary::before { content: '▾'; }
   #bingo-btn { font-size: 1.1rem; }
 }
 
-/* ─── Landscape / wider-viewport optimisation ────────────────────────────── */
-/*
- * On wide or landscape viewports (tablets, laptops) the bingo grid can grow
- * so tall that players have to scroll past the BINGO button.  We cap the
- * grid's width to the available viewport height so the full card always fits
- * on screen without scrolling.
- */
-@media (orientation: landscape) and (min-width: 600px) {
-  /* Constrain grid width to available vertical space so aspect-ratio:1 cells
-     don't exceed the viewport height. Subtract ~220px for nav + status bar +
-     BINGO button + padding. */
-  .bingo-grid,
-  .bingo-header {
-    max-width: min(100%, calc(100vh - 220px));
-    margin-left: auto;
-    margin-right: auto;
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Card page – viewport-fitting layout
+ *
+ * Goal: show nav, now-playing, status, grid, and BINGO button all within
+ * the viewport so the player never needs to scroll during a game.
+ * The songs-history section sits below the fold for reference.
+ *
+ * Uses 100dvh (dynamic viewport height) to account for mobile browser
+ * chrome that hides/shows as the user scrolls.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Card page: base layout ─────────────────────────────────────────────── */
+.card-page {
+  /* Prevent overscroll bounce that makes the layout feel broken */
+  overscroll-behavior: none;
+}
+.card-page nav {
+  padding: .5rem 1rem;
+  flex-shrink: 0;
+}
+.card-page .container {
+  /* Override the inline padding-bottom:7rem that was set for the old layout */
+  padding-bottom: 0 !important;
+  padding-top: .5rem !important;
+}
+
+/* Status row: compact flex layout between name/status and marked count */
+.card-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .4rem;
+  flex-wrap: wrap;
+  gap: .25rem;
+}
+.card-page .card-status-row h2 {
+  font-size: 1.1rem;
+  margin-bottom: .15rem;
+}
+.card-page .status-pill {
+  font-size: .7rem;
+  padding: .15rem .5rem;
+}
+
+/* Now-playing: compact single-line version for card page */
+.card-page #now-playing {
+  padding: .45rem .75rem;
+  margin-bottom: .4rem;
+  gap: .6rem;
+}
+.card-page #now-playing img {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+}
+.card-page #now-playing .np-info .np-title {
+  font-size: .85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-page #now-playing .np-info .np-artist {
+  font-size: .75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* BINGO header: tighter */
+.card-page .bingo-header {
+  margin-bottom: 2px;
+}
+.card-page .bingo-header span {
+  font-size: 1.1rem;
+}
+
+/* Grid: remove the fixed aspect-ratio so cells can compress vertically
+   to fill whatever space is available between the header and BINGO bar. */
+.card-page .bingo-grid {
+  gap: 3px;
+}
+.card-page .bingo-cell {
+  aspect-ratio: auto;
+  padding: .25rem .2rem;
+  min-height: 0;
+}
+
+/* BINGO bar: inline within page flow instead of fixed overlay.
+   This prevents it from covering the grid and lets the flex layout
+   size things correctly. */
+.card-page #bingo-bar {
+  position: static;
+  background: none;
+  padding: .25rem 0 .15rem;
+  pointer-events: auto;
+}
+.card-page #bingo-bar > * { pointer-events: auto; }
+.card-page #bingo-bar #bingo-btn {
+  font-size: 1.15rem;
+  padding: .5rem 2rem;
+  margin: 0;
+}
+
+/* Songs history: sits below the fold, scrollable if needed */
+.card-page #songs-history {
+  margin-top: .75rem;
+}
+
+/* ── Portrait: fill the viewport height ─────────────────────────────────── */
+@media (orientation: portrait) {
+  .card-page #card-section {
+    display: flex !important;
+    flex-direction: column;
+    /* Fill from current position to bottom of viewport.
+       Use 100dvh minus the nav (~40px) and top padding (~8px). */
+    min-height: calc(100dvh - 48px);
+  }
+
+  /* Let the grid stretch to fill available space */
+  .card-page .bingo-grid {
+    flex: 1;
+    /* Grid auto-rows fills evenly across the available height */
+    grid-auto-rows: 1fr;
+  }
+
+  /* Push songs-history out of the main viewport flow */
+  .card-page #songs-history {
+    flex-shrink: 0;
   }
 }
 
-/* Phone landscape – very compact UI */
+/* ── Landscape: side-by-side layout on wider screens ────────────────────── */
+@media (orientation: landscape) and (min-width: 600px) {
+  .card-page #card-section {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto 1fr auto auto;
+    gap: 0 1rem;
+    min-height: calc(100dvh - 44px);
+    align-items: start;
+  }
+
+  /* Now-playing spans the full width */
+  .card-page #now-playing {
+    grid-column: 1 / -1;
+  }
+  /* Status row spans full width */
+  .card-page .card-status-row {
+    grid-column: 1 / -1;
+  }
+  /* BINGO header + grid sit in the left column, sized to viewport height */
+  .card-page .bingo-header {
+    grid-column: 1;
+    max-width: min(100%, calc(100dvh - 160px));
+  }
+  .card-page .bingo-grid {
+    grid-column: 1;
+    max-width: min(100%, calc(100dvh - 160px));
+    grid-auto-rows: 1fr;
+  }
+  /* BINGO bar sits to the right of the grid */
+  .card-page #bingo-bar {
+    grid-column: 2;
+    grid-row: 3 / 5;
+    align-self: center;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .card-page #bingo-bar #bingo-btn {
+    writing-mode: horizontal-tb;
+  }
+  /* Songs history below everything */
+  .card-page #songs-history {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── Phone landscape: extra-compact ─────────────────────────────────────── */
 @media (orientation: landscape) and (max-height: 500px) {
-  nav { padding: .4rem 1rem; }
-  .bingo-cell { font-size: .5rem; padding: .15rem; }
-  .cell-title-sm .cell-title { font-size: .43rem; }
-  .cell-title-xs .cell-title { font-size: .37rem; }
-  #bingo-btn { font-size: 1rem; padding: .55rem 1.75rem; margin: .75rem auto; }
-  .bingo-header span { font-size: 1.1rem; }
-  .container { padding-top: .5rem !important; padding-bottom: 1.5rem !important; }
-  #now-playing { padding: .5rem .75rem; margin-bottom: .5rem; }
-  #now-playing img { width: 40px; height: 40px; }
+  .card-page nav { padding: .25rem .75rem; }
+  .card-page nav .logo { font-size: 1rem; }
+  .card-page .container {
+    padding-top: .25rem !important;
+    padding-bottom: 0 !important;
+  }
+  .card-page .bingo-cell { font-size: .45rem; padding: .1rem; border-radius: 4px; }
+  .cell-title-sm .cell-title { font-size: .38rem; }
+  .cell-title-xs .cell-title { font-size: .33rem; }
+  .card-page .bingo-header span { font-size: .9rem; }
+  .card-page #now-playing { padding: .3rem .5rem; margin-bottom: .25rem; }
+  .card-page #now-playing img { width: 28px; height: 28px; }
+  .card-page #now-playing .np-info .np-title { font-size: .75rem; }
+  .card-page #now-playing .np-info .np-artist { font-size: .65rem; }
+  .card-page .card-status-row h2 { font-size: .9rem; }
+  .card-page .status-pill { font-size: .6rem; padding: .1rem .4rem; }
+  .card-page #bingo-bar #bingo-btn { font-size: .9rem; padding: .35rem 1.25rem; }
+  .card-page .bingo-grid { gap: 2px; }
+  .card-page .bingo-header { margin-bottom: 1px; gap: 2px; }
+}
+
+/* ── Small portrait phones (< 380px wide) ───────────────────────────────── */
+@media (max-width: 380px) and (orientation: portrait) {
+  .card-page .bingo-cell { font-size: .48rem; padding: .15rem; }
+  .card-page .bingo-header span { font-size: .95rem; }
+  .card-page #bingo-bar #bingo-btn { font-size: 1rem; padding: .4rem 1.5rem; }
 }
 
 /* ─── Sticky BINGO bar (player page) ─────────────────────────────────────── */

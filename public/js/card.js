@@ -161,6 +161,8 @@ function saveMarked() {
 // ─── Card loading & rendering ─────────────────────────────────────────────────
 async function loadCard() {
   cardSection.style.display = 'block';
+  // Show a loading spinner while the card data is being fetched
+  bingoGrid.innerHTML = '<div class="loading-spinner">Loading your card…</div>';
   try {
     const res = await fetch(`/api/card/${cardId}`);
     if (!res.ok) {
@@ -525,6 +527,13 @@ function updateHints(song) {
 function setAlert(msg, type) {
   if (!msg) { globalAlert.innerHTML = ''; return; }
   globalAlert.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  if (type === 'success' || type === 'info') {
+    const alertEl = globalAlert.querySelector('.alert');
+    setTimeout(() => {
+      alertEl.classList.add('alert-fade-out');
+      alertEl.addEventListener('transitionend', () => { globalAlert.innerHTML = ''; }, { once: true });
+    }, 5000);
+  }
 }
 
 function setBingoMsg(msg, type) {
