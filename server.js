@@ -806,7 +806,7 @@ io.on('connection', (socket) => {
    * Winner replay celebration so all connected players see the animation again.
    * Payload: { gameId, cardId, playerName, cardNumber, rank, celebrationEmoji }
    */
-  socket.on('player:celebrate', ({ gameId, cardId, playerName, cardNumber, rank, celebrationEmoji } = {}) => {
+  socket.on('player:celebrate', ({ gameId, cardId, playerName, cardNumber, celebrationEmoji } = {}) => {
     if (!gameId || !cardId) return;
     const result = store.findCard(cardId);
     if (!result) return;
@@ -824,7 +824,7 @@ io.on('connection', (socket) => {
       cardId,
       playerName: winner.playerName || playerName || card.contact?.value || 'Winner',
       cardNumber: winner.cardNumber || card.number || cardNumber,
-      rank: winnerIdx + 1 || rank || 1,
+      rank: winnerIdx + 1,
       celebrationEmoji: safeEmoji,
     });
   });
