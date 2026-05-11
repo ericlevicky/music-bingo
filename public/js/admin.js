@@ -52,6 +52,7 @@ const optNowPlaying     = document.getElementById('opt-now-playing');
 const optHint           = document.getElementById('opt-hint');
 const optStrictValid    = document.getElementById('opt-strict-validation');
 const optFreeSpace      = document.getElementById('opt-free-space');
+const optAllowCelebration = document.getElementById('opt-allow-celebration');
 const optBingoMode      = document.getElementById('opt-bingo-mode');
 const optionsMsg        = document.getElementById('options-msg');
 
@@ -668,6 +669,7 @@ function syncOptionCheckboxes(opts) {
   if (typeof opts.showHint          === 'boolean') optHint.checked        = opts.showHint;
   if (typeof opts.strictValidation  === 'boolean') optStrictValid.checked = opts.strictValidation;
   if (typeof opts.freeSpace         === 'boolean') optFreeSpace.checked   = opts.freeSpace;
+  if (typeof opts.allowCelebration  === 'boolean') optAllowCelebration.checked = opts.allowCelebration;
   if (typeof opts.bingoMode         === 'string')  optBingoMode.value     = opts.bingoMode;
 }
 
@@ -682,6 +684,7 @@ async function savePlayerOptions() {
         showHint:         optHint.checked,
         strictValidation: optStrictValid.checked,
         freeSpace:        optFreeSpace.checked,
+        allowCelebration: optAllowCelebration.checked,
         bingoMode:        optBingoMode.value,
       }),
     });
@@ -697,7 +700,7 @@ async function savePlayerOptions() {
   }
 }
 
-[optSongHistory, optNowPlaying, optHint, optStrictValid, optFreeSpace].forEach((cb) => {
+[optSongHistory, optNowPlaying, optHint, optStrictValid, optFreeSpace, optAllowCelebration].forEach((cb) => {
   cb.addEventListener('change', savePlayerOptions);
 });
 optBingoMode.addEventListener('change', savePlayerOptions);

@@ -56,6 +56,7 @@ let playerOptions = {
   strictValidation: true,
   freeSpace:        true,
   bingoMode:        'any-line',
+  allowCelebration: true,
 };
 
 // ─── Name gate ────────────────────────────────────────────────────────────────
@@ -281,6 +282,7 @@ bingoBtn.addEventListener('click', async () => {
 
   // If this card has already won, retrigger the emoji rain only (no overlay).
   if (winnerData) {
+    if (!playerOptions.allowCelebration) return;
     if (card && card.gameId) {
       socket.emit('player:celebrate', {
         gameId: card.gameId,
@@ -329,8 +331,7 @@ bingoBtn.addEventListener('click', async () => {
       'success'
     );
     winnerData = { cardNumber: data.cardNumber, rank: data.rank, celebrationEmoji: data.celebrationEmoji };
-    bingoBtn.disabled = false;
-    bingoBtn.textContent = '🎉 Celebrate!';
+    updateCelebrationButton();
     showWinCelebration(playerName, data.cardNumber, data.rank, data.celebrationEmoji);
   }
 });
@@ -506,6 +507,20 @@ function applyPlayerOptions() {
   updateMarkedCount();
   // Bingo mode label
   updateModeLabel();
+  // Celebration button state
+  updateCelebrationButton();
+}
+
+/** Update BINGO button state when allowCelebration changes after a win. */
+function updateCelebrationButton() {
+  if (!winnerData) return;
+  if (playerOptions.allowCelebration === false) {
+    bingoBtn.disabled = true;
+    bingoBtn.textContent = '🏆 Winner!';
+  } else {
+    bingoBtn.disabled = false;
+    bingoBtn.textContent = '🎉 Celebrate!';
+  }
 }
 
 /** Highlight cells whose song matches the currently playing track. */
