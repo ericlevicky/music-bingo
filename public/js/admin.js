@@ -760,6 +760,7 @@ socket.on('player:joined', (card) => {
   // Add to card list if not already there
   if (!cardListEl.querySelector(`[data-card-id="${CSS.escape(card.id)}"]`)) {
     addCardItem({ ...card, url: card.url || `/card/${card.id}` });
+    updatePlayerCount();
     cardListSection.style.display = 'block';
   }
 });
