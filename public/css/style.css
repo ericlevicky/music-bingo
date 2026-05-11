@@ -175,27 +175,33 @@ input:focus { border-color: var(--green); }
 .bingo-header {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
-  margin-bottom: 4px;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 .bingo-header span {
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 900;
-  letter-spacing: .1em;
-  color: var(--green);
+  letter-spacing: .15em;
+  background: linear-gradient(135deg, var(--green), #6ee7b7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 6px rgba(29,185,84,.3));
 }
 
 .bingo-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
+  gap: 6px;
+  max-width: 620px;
+  margin: 0 auto;
 }
 
 .bingo-cell {
   aspect-ratio: 1;
-  background: var(--surface2);
-  border-radius: 8px;
+  background: linear-gradient(145deg, var(--surface2), #222);
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -205,42 +211,58 @@ input:focus { border-color: var(--green); }
   cursor: pointer;
   font-size: .68rem;
   line-height: 1.25;
-  border: 2px solid transparent;
-  transition: background var(--trans), border-color var(--trans), transform var(--trans);
+  border: 2px solid rgba(255,255,255,.06);
+  transition: background .25s ease, border-color .25s ease, transform .25s ease, box-shadow .25s ease;
   user-select: none;
   touch-action: manipulation;
   overflow: hidden;
   overflow-wrap: break-word;
   word-break: break-word;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.04);
+  position: relative;
 }
-.bingo-cell:hover:not(.free):not(.free-disabled) { background: #333; transform: scale(1.03); }
+.bingo-cell:hover:not(.free):not(.free-disabled) {
+  background: linear-gradient(145deg, #363636, #2a2a2a);
+  transform: scale(1.04);
+  border-color: rgba(29,185,84,.3);
+  box-shadow: 0 4px 16px rgba(29,185,84,.15), 0 2px 8px rgba(0,0,0,.4);
+}
 .bingo-cell.free {
-  background: rgba(29,185,84,.18);
+  background: linear-gradient(135deg, rgba(29,185,84,.22), rgba(29,185,84,.08));
   border-color: var(--green);
   cursor: default;
   color: var(--green);
   font-weight: 700;
   font-size: .85rem;
+  box-shadow: 0 0 20px rgba(29,185,84,.15), inset 0 0 15px rgba(29,185,84,.08);
 }
 .bingo-cell.free-disabled {
   background: var(--surface2);
   border-color: #333;
   cursor: default;
   opacity: .4;
+  box-shadow: none;
 }
 .bingo-cell.played {
-  border-color: rgba(29,185,84,.5);
-  background: rgba(29,185,84,.07);
+  border-color: rgba(29,185,84,.45);
+  background: linear-gradient(145deg, rgba(29,185,84,.1), rgba(29,185,84,.03));
 }
 .bingo-cell.marked {
-  background: var(--green) !important;
+  background: linear-gradient(135deg, #1db954, #17a348) !important;
   border-color: var(--green-d) !important;
   color: #000 !important;
   font-weight: 700;
+  box-shadow: 0 0 16px rgba(29,185,84,.4), 0 4px 12px rgba(0,0,0,.3) !important;
+  transform: scale(1.02);
 }
 .bingo-cell.hint {
   border-color: var(--gold);
-  box-shadow: 0 0 8px rgba(246,201,14,.5);
+  box-shadow: 0 0 14px rgba(246,201,14,.45), 0 0 28px rgba(246,201,14,.15);
+  animation: hintPulse 1.8s ease-in-out infinite;
+}
+@keyframes hintPulse {
+  0%,100% { box-shadow: 0 0 14px rgba(246,201,14,.45), 0 0 28px rgba(246,201,14,.15); }
+  50%     { box-shadow: 0 0 20px rgba(246,201,14,.6), 0 0 40px rgba(246,201,14,.25); }
 }
 .bingo-cell .cell-title  { font-weight: 600; margin-bottom: 1px; }
 .bingo-cell .cell-artist { color: var(--text-m); font-size: .6rem; }
@@ -336,18 +358,19 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
   border-radius: 50px;
   border: none;
   cursor: pointer;
-  background: var(--gold);
+  background: linear-gradient(135deg, var(--gold), #f0a000);
   color: #000;
-  transition: transform var(--trans), box-shadow var(--trans);
+  transition: transform .25s ease, box-shadow .25s ease;
   display: block;
   margin: 1.25rem auto;
   animation: glow 2s ease infinite;
+  text-shadow: 0 1px 2px rgba(0,0,0,.15);
 }
-#bingo-btn:hover { transform: scale(1.06); }
-#bingo-btn:disabled { background: #555; color: #888; animation: none; cursor: not-allowed; }
+#bingo-btn:hover { transform: scale(1.08); box-shadow: 0 0 30px rgba(246,201,14,.7), 0 6px 20px rgba(0,0,0,.3); }
+#bingo-btn:disabled { background: #555; color: #888; animation: none; cursor: not-allowed; box-shadow: none; text-shadow: none; }
 @keyframes glow {
-  0%,100% { box-shadow: 0 0 8px rgba(246,201,14,.4); }
-  50%      { box-shadow: 0 0 24px rgba(246,201,14,.9); }
+  0%,100% { box-shadow: 0 0 10px rgba(246,201,14,.4), 0 4px 12px rgba(0,0,0,.2); }
+  50%      { box-shadow: 0 0 28px rgba(246,201,14,.8), 0 4px 20px rgba(0,0,0,.3); }
 }
 
 /* ─── Splash / landing ───────────────────────────────────────────────────── */
@@ -758,10 +781,13 @@ details.inline-collapse > .collapse-body {
 
 /* Now-playing: compact single-line version for card page */
 .card-page #now-playing {
-  padding: .45rem .75rem;
-  margin-bottom: .4rem;
+  padding: .5rem .75rem;
+  margin-bottom: .5rem;
   gap: .6rem;
   overflow: hidden;
+  background: linear-gradient(135deg, var(--surface2), rgba(29,185,84,.06));
+  border: 1px solid rgba(29,185,84,.12);
+  border-radius: 10px;
 }
 .card-page #now-playing .np-info {
   min-width: 0;        /* allow flex child to shrink below content size */
@@ -794,22 +820,26 @@ details.inline-collapse > .collapse-body {
 
 /* BINGO header: tighter */
 .card-page .bingo-header {
-  margin-bottom: 2px;
+  margin-bottom: 4px;
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .card-page .bingo-header span {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 }
 
-/* Grid: remove the fixed aspect-ratio so cells can compress vertically
-   to fill whatever space is available between the header and BINGO bar. */
+/* Grid: keep square cells, constrain width for a compact card layout */
 .card-page .bingo-grid {
-  gap: 3px;
-  grid-auto-rows: 1fr;
+  gap: 5px;
+  max-width: 620px;
+  margin: 0 auto;
 }
 .card-page .bingo-cell {
-  aspect-ratio: auto;
+  aspect-ratio: 1;
   padding: .25rem .2rem;
   min-height: 0;
+  font-size: .62rem;
 }
 
 /* Bingo message: constrain width so validation text doesn't shift layout */
@@ -827,11 +857,11 @@ details.inline-collapse > .collapse-body {
 /* ── Landscape: cap grid width so card fits on screen ───────────────────── */
 @media (orientation: landscape) and (min-width: 600px) {
   .card-page .bingo-grid {
-    max-width: calc(100dvh - 120px);
+    max-width: min(620px, calc(100dvh - 120px));
     margin: 0 auto;
   }
   .card-page .bingo-header {
-    max-width: calc(100dvh - 120px);
+    max-width: min(620px, calc(100dvh - 120px));
     margin: 0 auto;
   }
 }
@@ -844,7 +874,7 @@ details.inline-collapse > .collapse-body {
     padding-top: .25rem !important;
     padding-bottom: 0 !important;
   }
-  .card-page .bingo-cell { font-size: .45rem; padding: .1rem; border-radius: 4px; }
+  .card-page .bingo-cell { font-size: .45rem; padding: .1rem; border-radius: 6px; }
   .cell-title-sm .cell-title { font-size: .38rem; }
   .cell-title-xs .cell-title { font-size: .33rem; }
   .card-page .bingo-header span { font-size: .9rem; }
@@ -855,13 +885,13 @@ details.inline-collapse > .collapse-body {
   .card-page .card-status-row h2 { font-size: .9rem; }
   .card-page .status-pill { font-size: .6rem; padding: .1rem .4rem; }
   .card-page #bingo-bar #bingo-btn { font-size: .9rem; padding: .35rem 1.25rem; }
-  .card-page .bingo-grid { gap: 2px; }
-  .card-page .bingo-header { margin-bottom: 1px; gap: 2px; }
+  .card-page .bingo-grid { gap: 3px; }
+  .card-page .bingo-header { margin-bottom: 2px; gap: 3px; }
 }
 
 /* ── Small portrait phones (< 380px wide) ───────────────────────────────── */
 @media (max-width: 380px) and (orientation: portrait) {
-  .card-page .bingo-cell { font-size: .48rem; padding: .15rem; }
+  .card-page .bingo-cell { font-size: .48rem; padding: .15rem; border-radius: 6px; }
   .card-page .bingo-header span { font-size: .95rem; }
   .card-page #bingo-bar #bingo-btn { font-size: 1rem; padding: .4rem 1.5rem; }
 }
@@ -951,9 +981,9 @@ details.inline-collapse > .collapse-body {
 
 /* ─── Cell win flash ─────────────────────────────────────────────────────── */
 @keyframes cellWin {
-  0%,100% { background: var(--surface2); }
-  25%     { background: var(--gold); }
-  75%     { background: var(--green); }
+  0%,100% { background: var(--surface2); box-shadow: none; }
+  25%     { background: var(--gold); box-shadow: 0 0 16px rgba(246,201,14,.5); }
+  75%     { background: var(--green); box-shadow: 0 0 16px rgba(29,185,84,.5); }
 }
 .bingo-cell.win-flash {
   animation: cellWin .8s ease forwards;
