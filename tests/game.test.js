@@ -248,6 +248,20 @@ describe('GameState.setPlayerOptions()', () => {
     game.reset();
     expect(game.playerOptions.freeSpace).toBe(false);
   });
+
+  test('sets allowCelebration option', () => {
+    const game = new GameState();
+    expect(game.playerOptions.allowCelebration).toBe(true);
+    game.setPlayerOptions({ allowCelebration: false });
+    expect(game.playerOptions.allowCelebration).toBe(false);
+  });
+
+  test('preserves allowCelebration option after reset', () => {
+    const game = new GameState();
+    game.setPlayerOptions({ allowCelebration: false });
+    game.reset();
+    expect(game.playerOptions.allowCelebration).toBe(false);
+  });
 });
 
 describe('GameState.reset()', () => {

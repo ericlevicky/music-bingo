@@ -554,8 +554,8 @@ app.post('/api/game/new', strictLimiter, ensureAdmin, (req, res) => {
 });
 
 app.post('/api/game/options', strictLimiter, ensureAdmin, (req, res) => {
-  const { showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace, bingoMode } = req.body;
-  req.user.game.setPlayerOptions({ showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace, bingoMode });
+  const { showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace, allowCelebration, bingoMode } = req.body;
+  req.user.game.setPlayerOptions({ showSongHistory, showNowPlaying, showHint, strictValidation, freeSpace, allowCelebration, bingoMode });
   if (req.user.game.gameId) {
     io.to(`game:${req.user.game.gameId}`).emit('game:options', req.user.game.playerOptions);
   }
@@ -813,6 +813,9 @@ io.on('connection', (socket) => {
     if (!result) return;
     const { admin, card } = result;
     if (!admin.game || admin.game.gameId !== gameId) return;
+
+    // Admin can disable re-celebrations
+    if (admin.game.playerOptions.allowCelebration === false) return;
 
     const winner = admin.game.winners.find((w) => w.cardId === cardId);
     if (!winner) return;
