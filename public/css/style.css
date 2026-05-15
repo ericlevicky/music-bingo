@@ -823,7 +823,13 @@ details.inline-collapse > .collapse-body {
 
 .bingo-msg { text-align: center; }
 
-.songs-history-card { margin-top: 1.5rem; background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border); }
+.songs-history-card {
+  margin-top: 1.5rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+}
 .played-list {
   padding-left: 1.25rem;
   line-height: 1.9;
