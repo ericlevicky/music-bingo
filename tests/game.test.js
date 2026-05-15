@@ -35,6 +35,22 @@ describe('GameState.setCards() – gameId preservation', () => {
     game.setCards(makeCards(3), makeSongs(24), 'playlist-2');
     expect(game.gameId).toBe(gameId);
   });
+
+  test('throws when trying to set cards while game is active', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+    expect(() => game.setCards(makeCards(3), makeSongs(24), 'playlist-2'))
+      .toThrow('Cannot change playlist while a game is active');
+  });
+
+  test('is allowed after game has ended', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+    game.end();
+    expect(() => game.setCards(makeCards(3), makeSongs(24), 'playlist-2')).not.toThrow();
+  });
 });
 
 describe('GameState.updatePlaylist()', () => {

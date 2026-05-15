@@ -585,6 +585,15 @@ function updateGameStatus(status) {
   gameStatusEl.className   = `status-pill ${classes[status] || 'status-idle'}`;
   startBtn.disabled = status === 'active';
   endBtn.disabled   = status !== 'active';
+
+  // Prevent playlist changes while the game is active.
+  const lockPlaylist = status === 'active';
+  playlistSelect.disabled    = lockPlaylist;
+  refreshBtn.disabled        = lockPlaylist;
+  setupBtn.disabled          = lockPlaylist;
+  changePlaylistBtn.disabled = lockPlaylist;
+  generateBtn.disabled       = lockPlaylist;
+
   updateStepProgress();
 }
 
