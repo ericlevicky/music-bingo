@@ -611,8 +611,8 @@ function updateGameStatus(status) {
         text.textContent = 'Playlist is locked while the game is active';
         banner.appendChild(icon);
         banner.appendChild(text);
-        const firstChild = playlistSection.querySelector('h3');
-        if (firstChild) firstChild.insertAdjacentElement('afterend', banner);
+        const sectionHeading = playlistSection.querySelector('h3');
+        if (sectionHeading) sectionHeading.insertAdjacentElement('afterend', banner);
         else playlistSection.prepend(banner);
       }
     } else {
@@ -869,7 +869,10 @@ function updateStepProgress() {
     if (setupPanel.open && !setupPanel.dataset.userOpened) {
       setupPanel.open = false;
     }
-    summaryText.textContent = `✓ ${currentPlaylistName || 'Playlist selected'} · ${optBingoMode.options[optBingoMode.selectedIndex].text}`;
+    const modeText = optBingoMode && optBingoMode.selectedIndex >= 0
+      ? optBingoMode.options[optBingoMode.selectedIndex].text
+      : 'Any line';
+    summaryText.textContent = `✓ ${currentPlaylistName || 'Playlist selected'} · ${modeText}`;
   } else {
     summaryText.textContent = '';
     // Keep open during setup
