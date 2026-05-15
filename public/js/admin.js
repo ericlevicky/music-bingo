@@ -596,25 +596,29 @@ function updateGameStatus(status) {
 
   // Visual lock indicator on the playlist section
   const playlistSection = document.getElementById('playlist-section');
-  const existingBanner  = playlistSection.querySelector('.playlist-lock-banner');
-  if (lockPlaylist) {
-    playlistSection.classList.add('playlist-locked');
-    if (!existingBanner) {
-      const banner = document.createElement('div');
-      banner.className = 'playlist-lock-banner';
-      const icon = document.createElement('span');
-      icon.className = 'lock-icon';
-      icon.textContent = '🔒';
-      const text = document.createElement('span');
-      text.className = 'lock-text';
-      text.textContent = 'Playlist is locked while the game is active';
-      banner.appendChild(icon);
-      banner.appendChild(text);
-      playlistSection.querySelector('.step-header').insertAdjacentElement('afterend', banner);
+  if (playlistSection) {
+    const existingBanner  = playlistSection.querySelector('.playlist-lock-banner');
+    if (lockPlaylist) {
+      playlistSection.classList.add('playlist-locked');
+      if (!existingBanner) {
+        const banner = document.createElement('div');
+        banner.className = 'playlist-lock-banner';
+        const icon = document.createElement('span');
+        icon.className = 'lock-icon';
+        icon.textContent = '🔒';
+        const text = document.createElement('span');
+        text.className = 'lock-text';
+        text.textContent = 'Playlist is locked while the game is active';
+        banner.appendChild(icon);
+        banner.appendChild(text);
+        const sectionHeading = playlistSection.querySelector('h3');
+        if (sectionHeading) sectionHeading.insertAdjacentElement('afterend', banner);
+        else playlistSection.prepend(banner);
+      }
+    } else {
+      playlistSection.classList.remove('playlist-locked');
+      if (existingBanner) existingBanner.remove();
     }
-  } else {
-    playlistSection.classList.remove('playlist-locked');
-    if (existingBanner) existingBanner.remove();
   }
 
   updateStepProgress();
@@ -842,23 +846,49 @@ function updateStepProgress() {
   const gameReady        = !!currentGameId;
   const gameActive       = gameStatusEl.classList.contains('status-active');
 
-  // Step 1: Spotify
-  setStepState(1, spotifyConnected ? 'completed' : 'active');
-  // Step 2: Playlist
-  setStepState(2, !spotifyConnected ? '' : playlistSelected ? 'completed' : 'active');
-  setConnector(1, spotifyConnected);
-  // Step 3: Share / Generate
-  setStepState(3, !playlistSelected ? '' : gameReady ? 'completed' : 'active');
-  setConnector(2, playlistSelected);
-  // Step 4: Play
-  setStepState(4, !gameReady ? '' : gameActive ? 'active' : 'completed');
-  setConnector(3, gameReady);
+  const setupDone = spotifyConnected && playlistSelected;
+
+  // Step 1: Setup (Spotify + Playlist)
+  setStepState(1, setupDone ? 'completed' : 'active');
+  // Step 2: Share
+  setStepState(2, !setupDone ? '' : gameReady ? 'completed' : 'active');
+  setConnector(1, setupDone);
+  // Step 3: Play
+  setStepState(3, !gameReady ? '' : gameActive ? 'active' : 'completed');
+  setConnector(2, gameReady);
 
   // Step check marks
-  toggleCheck('step1-check', spotifyConnected);
-  toggleCheck('step2-check', playlistSelected);
-  toggleCheck('step3-check', gameReady);
+  toggleCheck('step1-check', setupDone);
+  toggleCheck('step2-check', gameReady);
+  toggleCheck('step3-check', gameActive);
+
+  // Auto-collapse setup panel once setup is done and game link exists
+  const setupPanel = document.getElementById('setup-panel');
+  const summaryText = document.getElementById('setup-summary-text');
+  if (setupDone && gameReady) {
+    if (setupPanel.open && !setupPanel.dataset.userOpened) {
+      setupPanel.open = false;
+    }
+    const modeText = optBingoMode && optBingoMode.selectedIndex >= 0
+      ? optBingoMode.options[optBingoMode.selectedIndex].text
+      : 'Any line';
+    summaryText.textContent = `✓ ${currentPlaylistName || 'Playlist selected'} · ${modeText}`;
+  } else {
+    summaryText.textContent = '';
+    // Keep open during setup
+    if (!setupPanel.open) setupPanel.open = true;
+  }
 }
+
+// Track manual open/close of setup panel
+document.getElementById('setup-panel').addEventListener('toggle', (e) => {
+  const panel = e.target;
+  if (panel.open) {
+    panel.dataset.userOpened = '1';
+  } else {
+    delete panel.dataset.userOpened;
+  }
+});
 
 function setStepState(step, state) {
   const dot = document.getElementById(`step-dot-${step}`);
