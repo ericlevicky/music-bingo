@@ -33,103 +33,155 @@
     <div class="step-progress" id="step-progress">
       <div class="step-dot" id="step-dot-1" data-step="1">
         1
-        <span class="step-label">Spotify</span>
+        <span class="step-label">Setup</span>
       </div>
       <div class="step-connector" id="step-conn-1"></div>
       <div class="step-dot" id="step-dot-2" data-step="2">
         2
-        <span class="step-label">Playlist</span>
+        <span class="step-label">Share</span>
       </div>
       <div class="step-connector" id="step-conn-2"></div>
       <div class="step-dot" id="step-dot-3" data-step="3">
         3
-        <span class="step-label">Share</span>
-      </div>
-      <div class="step-connector" id="step-conn-3"></div>
-      <div class="step-dot" id="step-dot-4" data-step="4">
-        4
         <span class="step-label">Play</span>
       </div>
     </div>
 
     <div id="global-alert"></div>
 
-    <!-- ── Step 1: Spotify auth ─────────────────────────────────── -->
-    <div class="section card" id="spotify-section">
-      <div class="step-header">
+    <!-- ══════════════════════════════════════════════════════════
+         SETUP PANEL – Spotify + Playlist (collapsible once done)
+         ══════════════════════════════════════════════════════════ -->
+    <details class="section card" id="setup-panel" open>
+      <summary class="setup-summary">
         <span class="step-badge">1</span>
-        <h2>Connect Spotify</h2>
+        <h2 style="margin-bottom:0;">Setup</h2>
         <span class="step-check" id="step1-check">✅</span>
-      </div>
-      <p style="margin-bottom:1rem;">
-        Authorise this app to read playlists and currently-playing track from your Spotify account.
-      </p>
-      <div id="spotify-status-msg"></div>
-      <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-        <a href="/auth/spotify" class="btn btn-green" id="spotify-btn">
-          🎧 Connect with Spotify
-        </a>
-        <span id="spotify-badge" style="font-size:.85rem;"></span>
-      </div>
-    </div>
+        <span id="setup-summary-text" class="setup-summary-detail"></span>
+      </summary>
 
-    <!-- ── Step 2: Playlist Selection ───────────────────────────── -->
-    <div class="section card" id="playlist-section">
-      <div class="step-header">
-        <span class="step-badge">2</span>
-        <h2>Choose Playlist</h2>
-        <span class="step-check" id="step2-check">✅</span>
-      </div>
-      <p style="margin-bottom:1rem; font-size:.85rem;">
-        Pick a Spotify playlist that will populate the bingo cards. Need fewer songs? Trim it down.
-      </p>
-
-      <!-- Playlist picker -->
-      <div class="form-group" style="margin-bottom:1rem;">
-        <label for="playlist-select">Spotify Playlist</label>
-        <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
-          <select id="playlist-select" style="flex:1; min-width:200px; padding:.6rem .85rem;
-            background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.1); border-radius:var(--radius);
-            color:var(--text); font-size:.95rem; outline:none;">
-            <option value="">— Connect Spotify to see your playlists —</option>
-          </select>
-          <button class="btn btn-grey" id="refresh-playlists-btn" title="Reload playlists">↺</button>
-        </div>
-        <div id="playlist-info" style="font-size:.82rem; color:var(--text-m); margin-top:.4rem;"></div>
-      </div>
-
-      <!-- Trimmed playlist creator (collapsible) -->
-      <details id="trim-playlist-section" class="inline-collapse" style="display:none; margin-bottom:1rem;">
-        <summary>✂️ Create Trimmed Playlist</summary>
-        <div class="collapse-body">
-          <p style="font-size:.82rem; margin-bottom:.75rem;">
-            Create a new Spotify playlist by randomly picking songs from the selected one.
-            The original playlist is never modified. The new playlist will be saved to your Spotify account and selected automatically.
+      <div class="setup-panel-body">
+        <!-- Spotify auth -->
+        <div id="spotify-section" class="setup-subsection">
+          <h3>🎧 Connect Spotify</h3>
+          <p style="margin-bottom:.75rem; font-size:.85rem;">
+            Authorise this app to read playlists and currently-playing track from your Spotify account.
           </p>
-          <div style="font-size:.82rem; color:var(--text-m); margin-bottom:.75rem;">
-            New playlist name: <span id="trim-playlist-name-preview" style="color:var(--text); font-style:italic;"></span>
+          <div id="spotify-status-msg"></div>
+          <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+            <a href="/auth/spotify" class="btn btn-green" id="spotify-btn">
+              🎧 Connect with Spotify
+            </a>
+            <span id="spotify-badge" style="font-size:.85rem;"></span>
           </div>
-          <div class="form-row" style="align-items:flex-end; gap:.75rem; flex-wrap:wrap;">
-            <div class="form-group" style="max-width:200px;">
-              <label for="trim-song-count">Number of songs (24–500)</label>
-              <input type="number" id="trim-song-count" value="30" min="24" max="500" />
-            </div>
-            <button class="btn btn-grey" id="trim-btn" style="flex-shrink:0;">Create &amp; Select</button>
-          </div>
-          <div id="trim-msg" style="margin-top:.6rem;"></div>
         </div>
-      </details>
-    </div>
 
-    <!-- ── Step 3: Generate & Share ─────────────────────────────── -->
+        <!-- Playlist selection -->
+        <div id="playlist-section" class="setup-subsection">
+          <h3>📋 Choose Playlist</h3>
+          <p style="margin-bottom:.75rem; font-size:.85rem;">
+            Pick a Spotify playlist that will populate the bingo cards. Need fewer songs? Trim it down.
+          </p>
+
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label for="playlist-select">Spotify Playlist</label>
+            <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
+              <select id="playlist-select" style="flex:1; min-width:200px; padding:.6rem .85rem;
+                background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.1); border-radius:var(--radius);
+                color:var(--text); font-size:.95rem; outline:none;">
+                <option value="">— Connect Spotify to see your playlists —</option>
+              </select>
+              <button class="btn btn-grey" id="refresh-playlists-btn" title="Reload playlists">↺</button>
+            </div>
+            <div id="playlist-info" style="font-size:.82rem; color:var(--text-m); margin-top:.4rem;"></div>
+          </div>
+
+          <!-- Trimmed playlist creator (collapsible) -->
+          <details id="trim-playlist-section" class="inline-collapse" style="display:none; margin-bottom:1rem;">
+            <summary>✂️ Create Trimmed Playlist</summary>
+            <div class="collapse-body">
+              <p style="font-size:.82rem; margin-bottom:.75rem;">
+                Create a new Spotify playlist by randomly picking songs from the selected one.
+                The original playlist is never modified. The new playlist will be saved to your Spotify account and selected automatically.
+              </p>
+              <div style="font-size:.82rem; color:var(--text-m); margin-bottom:.75rem;">
+                New playlist name: <span id="trim-playlist-name-preview" style="color:var(--text); font-style:italic;"></span>
+              </div>
+              <div class="form-row" style="align-items:flex-end; gap:.75rem; flex-wrap:wrap;">
+                <div class="form-group" style="max-width:200px;">
+                  <label for="trim-song-count">Number of songs (24–500)</label>
+                  <input type="number" id="trim-song-count" value="30" min="24" max="500" />
+                </div>
+                <button class="btn btn-grey" id="trim-btn" style="flex-shrink:0;">Create &amp; Select</button>
+              </div>
+              <div id="trim-msg" style="margin-top:.6rem;"></div>
+            </div>
+          </details>
+        </div>
+
+        <!-- Game settings (inline, not hidden) -->
+        <div id="game-settings-section" class="setup-subsection">
+          <h3>⚙️ Game Settings</h3>
+          <div style="display:flex; flex-direction:column; gap:.65rem;">
+            <div class="form-group" style="max-width:360px; margin-bottom:.4rem;">
+              <label for="opt-bingo-mode">Bingo mode</label>
+              <select id="opt-bingo-mode" style="width:100%; padding:.6rem .85rem;
+                background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.1); border-radius:var(--radius);
+                color:var(--text); font-size:.95rem; outline:none;">
+                <option value="any-line">Normal – any row, column, or diagonal</option>
+                <option value="postage-stamp">Postage Stamp – any 2×2 corner block</option>
+                <option value="full-board">Full Board – every cell (blackout)</option>
+                <option value="x-pattern">X Pattern – both diagonals</option>
+              </select>
+            </div>
+            <label class="opt-label">
+              <input type="checkbox" id="opt-free-space" checked />
+              Enable free space (centre cell is automatically valid)
+            </label>
+            <label class="opt-label">
+              <input type="checkbox" id="opt-strict-validation" checked />
+              Only allow marking cells for songs that have played
+            </label>
+
+            <details class="inline-collapse" style="margin-top:.25rem;">
+              <summary>More player display options</summary>
+              <div class="collapse-body" style="display:flex; flex-direction:column; gap:.65rem;">
+                <label class="opt-label">
+                  <input type="checkbox" id="opt-song-history" checked />
+                  Show song history (songs that have already played)
+                </label>
+                <label class="opt-label">
+                  <input type="checkbox" id="opt-now-playing" checked />
+                  Show currently playing song banner
+                </label>
+                <label class="opt-label">
+                  <input type="checkbox" id="opt-hint" checked />
+                  Highlight the matching cell when a song is playing
+                </label>
+                <label class="opt-label">
+                  <input type="checkbox" id="opt-allow-celebration" checked />
+                  Allow winners to re-celebrate (replay emoji rain for all players)
+                </label>
+              </div>
+            </details>
+          </div>
+          <div id="options-msg" style="margin-top:.75rem;"></div>
+        </div>
+      </div>
+    </details>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SHARE & INVITE – Generate link, QR, contacts, players
+         ══════════════════════════════════════════════════════════ -->
     <div class="section card" id="share-section">
       <div class="step-header">
-        <span class="step-badge">3</span>
-        <h2>Generate &amp; Share</h2>
-        <span class="step-check" id="step3-check">✅</span>
+        <span class="step-badge">2</span>
+        <h2>Share &amp; Invite</h2>
+        <span class="step-check" id="step2-check">✅</span>
       </div>
+
       <p style="margin-bottom:1rem; font-size:.85rem;">
-        Generate a game link and share it with players. Anyone with the link can join — no pre-assigning required.
+        Generate a game link and share it with players. Anyone with the link can join.
       </p>
 
       <!-- Primary action: Generate game link -->
@@ -194,11 +246,14 @@
       </div>
     </div>
 
-    <!-- ── Step 4: Game Control ──────────────────────────────────── -->
+    <!-- ══════════════════════════════════════════════════════════
+         GAME – Controls, now-playing, played songs, winners
+         ══════════════════════════════════════════════════════════ -->
     <div class="section card" id="control-section">
       <div class="step-header">
-        <span class="step-badge">4</span>
-        <h2>Game Control</h2>
+        <span class="step-badge">3</span>
+        <h2>Game</h2>
+        <span class="step-check" id="step3-check">✅</span>
       </div>
 
       <!-- Config summary bar -->
@@ -232,6 +287,24 @@
         <strong>Play Again</strong> – clears played songs &amp; winners; everyone keeps their card and link.
       </p>
 
+      <!-- Played songs & winners – inline during game -->
+      <div class="game-live-grid" id="game-live-grid" style="margin-top:1.25rem;">
+        <div class="game-live-col">
+          <h3>🎵 Played Songs</h3>
+          <p id="no-songs-msg">No songs played yet.</p>
+          <ol id="played-list" style="padding-left:1.25rem; line-height:1.8; display:none;"></ol>
+        </div>
+
+        <div class="game-live-col">
+          <h3>🏆 Winners</h3>
+          <p id="no-winners-msg">No winners yet.</p>
+          <table id="winners-table" style="display:none;">
+            <thead><tr><th>Rank</th><th>Player</th><th>Card</th><th>Time</th></tr></thead>
+            <tbody id="winners-body"></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Danger zone: New Game -->
       <div class="danger-zone">
         <div class="danger-zone-title">⚠️ Danger Zone</div>
@@ -245,69 +318,6 @@
       <div id="game-msg" style="margin-top:.85rem;"></div>
     </div>
 
-    <!-- ── Player screen options (advanced) ─────────────────────── -->
-    <details class="section card" id="player-options-details">
-      <summary>Player Screen Options</summary>
-      <div style="margin-top:.85rem;">
-        <p style="margin-bottom:.85rem;">Control what players see on their bingo card screen.</p>
-        <div style="display:flex; flex-direction:column; gap:.65rem;">
-          <label class="opt-label">
-            <input type="checkbox" id="opt-song-history" checked />
-            Show song history (songs that have already played)
-          </label>
-          <label class="opt-label">
-            <input type="checkbox" id="opt-now-playing" checked />
-            Show currently playing song banner
-          </label>
-          <label class="opt-label">
-            <input type="checkbox" id="opt-hint" checked />
-            Highlight the matching cell when a song is playing
-          </label>
-          <label class="opt-label">
-            <input type="checkbox" id="opt-strict-validation" checked />
-            Only allow marking cells for songs that have played
-          </label>
-          <label class="opt-label">
-            <input type="checkbox" id="opt-free-space" checked />
-            Enable free space (centre cell is automatically valid)
-          </label>
-          <label class="opt-label">
-            <input type="checkbox" id="opt-allow-celebration" checked />
-            Allow winners to re-celebrate (replay emoji rain for all players)
-          </label>
-          <div class="form-group" style="max-width:360px; margin-top:.4rem;">
-            <label for="opt-bingo-mode">Bingo mode</label>
-            <select id="opt-bingo-mode" style="width:100%; padding:.6rem .85rem;
-              background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.1); border-radius:var(--radius);
-              color:var(--text); font-size:.95rem; outline:none;">
-              <option value="any-line">Normal – any row, column, or diagonal</option>
-              <option value="postage-stamp">Postage Stamp – any 2×2 corner block</option>
-              <option value="full-board">Full Board – every cell (blackout)</option>
-              <option value="x-pattern">X Pattern – both diagonals</option>
-            </select>
-          </div>
-        </div>
-        <div id="options-msg" style="margin-top:.75rem;"></div>
-      </div>
-    </details>
-
-    <!-- ── Played songs & winners ──────────────────────────────── -->
-    <div class="grid-2col">
-      <div class="section card">
-        <h2>🎵 Played Songs</h2>
-        <p id="no-songs-msg">No songs played yet.</p>
-        <ol id="played-list" style="padding-left:1.25rem; line-height:1.8; display:none;"></ol>
-      </div>
-
-      <div class="section card">
-        <h2>🏆 Winners</h2>
-        <p id="no-winners-msg">No winners yet.</p>
-        <table id="winners-table" style="display:none;">
-          <thead><tr><th>Rank</th><th>Player</th><th>Card</th><th>Time</th></tr></thead>
-          <tbody id="winners-body"></tbody>
-        </table>
-      </div>
-    </div>
   </div>
 
   <!-- QR code modal -->
