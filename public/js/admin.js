@@ -594,6 +594,29 @@ function updateGameStatus(status) {
   changePlaylistBtn.disabled = lockPlaylist;
   generateBtn.disabled       = lockPlaylist;
 
+  // Visual lock indicator on the playlist section
+  const playlistSection = document.getElementById('playlist-section');
+  const existingBanner  = playlistSection.querySelector('.playlist-lock-banner');
+  if (lockPlaylist) {
+    playlistSection.classList.add('playlist-locked');
+    if (!existingBanner) {
+      const banner = document.createElement('div');
+      banner.className = 'playlist-lock-banner';
+      const icon = document.createElement('span');
+      icon.className = 'lock-icon';
+      icon.textContent = '🔒';
+      const text = document.createElement('span');
+      text.className = 'lock-text';
+      text.textContent = 'Playlist is locked while the game is active';
+      banner.appendChild(icon);
+      banner.appendChild(text);
+      playlistSection.querySelector('.step-header').insertAdjacentElement('afterend', banner);
+    }
+  } else {
+    playlistSection.classList.remove('playlist-locked');
+    if (existingBanner) existingBanner.remove();
+  }
+
   updateStepProgress();
 }
 

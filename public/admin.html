@@ -89,7 +89,7 @@
         <label for="playlist-select">Spotify Playlist</label>
         <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
           <select id="playlist-select" style="flex:1; min-width:200px; padding:.6rem .85rem;
-            background:var(--surface2); border:1.5px solid #444; border-radius:var(--radius);
+            background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.1); border-radius:var(--radius);
             color:var(--text); font-size:.95rem; outline:none;">
             <option value="">— Connect Spotify to see your playlists —</option>
           </select>
@@ -140,14 +140,14 @@
       <div id="setup-msg"></div>
 
       <!-- Game link display (shown after setup) -->
-      <div id="game-link-section" style="display:none; margin-top:1rem; background:var(--surface2); border-radius:var(--radius); padding:1rem;">
+      <div id="game-link-section" style="display:none; margin-top:1rem; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:var(--radius); padding:1rem;">
         <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:.75rem; flex-wrap:wrap;">
           <span style="font-size:.9rem; font-weight:600;">🎮 Game Link</span>
           <button class="btn btn-grey" id="game-qr-btn" style="padding:.3rem .85rem; font-size:.85rem;" aria-label="Show game QR code">🔲 QR Code</button>
           <a id="qr-display-link" href="#" target="_blank" class="btn btn-grey" style="padding:.3rem .85rem; font-size:.85rem;" aria-label="Open QR code on a separate page">📺 QR Display Page</a>
         </div>
         <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">
-          <input type="text" id="game-link-input" readonly style="flex:1; min-width:200px; font-size:.85rem; background:var(--surface); border-color:#555;" />
+          <input type="text" id="game-link-input" readonly style="flex:1; min-width:200px; font-size:.85rem; background:rgba(255,255,255,.03); border-color:rgba(255,255,255,.12);" />
           <button class="btn btn-grey" id="copy-link-btn" style="padding:.45rem .85rem; font-size:.85rem;">Copy</button>
         </div>
       </div>
@@ -166,8 +166,8 @@
             </label>
             <textarea id="contacts-input" rows="6"
               placeholder="john@example.com&#10;jane@example.com&#10;+1 555 000 1234"
-              style="width:100%; padding:.6rem .85rem; background:var(--surface2);
-                border:1.5px solid #444; border-radius:var(--radius); color:var(--text);
+              style="width:100%; padding:.6rem .85rem; background:rgba(255,255,255,.04);
+                border:1.5px solid rgba(255,255,255,.1); border-radius:var(--radius); color:var(--text);
                 font-size:.9rem; resize:vertical; outline:none; font-family:inherit;"></textarea>
           </div>
           <div class="form-row" style="margin-bottom:1rem; align-items:flex-end;">
@@ -278,7 +278,7 @@
           <div class="form-group" style="max-width:360px; margin-top:.4rem;">
             <label for="opt-bingo-mode">Bingo mode</label>
             <select id="opt-bingo-mode" style="width:100%; padding:.6rem .85rem;
-              background:var(--surface2); border:1.5px solid #444; border-radius:var(--radius);
+              background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.1); border-radius:var(--radius);
               color:var(--text); font-size:.95rem; outline:none;">
               <option value="any-line">Normal – any row, column, or diagonal</option>
               <option value="postage-stamp">Postage Stamp – any 2×2 corner block</option>
