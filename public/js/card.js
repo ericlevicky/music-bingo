@@ -554,9 +554,13 @@ function setAlert(msg, type) {
   }
 }
 
+let _bingoMsgTimeout = null;
 function setBingoMsg(msg, type) {
+  clearTimeout(_bingoMsgTimeout);
   if (!msg) { bingoMsg.innerHTML = ''; return; }
   bingoMsg.innerHTML = `<div class="alert alert-${type}" style="text-align:center;">${msg}</div>`;
+  // Auto-dismiss after 5 seconds
+  _bingoMsgTimeout = setTimeout(() => { bingoMsg.innerHTML = ''; }, 5000);
 }
 
 /** Apply a CSS modifier class to scale down font for long song titles. */
@@ -647,6 +651,11 @@ function showWinCelebration(winnerName, cardNumber, rank = 1, emoji = '🎊') {
     el.classList.remove('win-flash');
     setTimeout(() => el.classList.add('win-flash'), i * 40);
   });
+  // Auto-dismiss the overlay after 8 seconds
+  clearTimeout(winOverlay._autoDismiss);
+  winOverlay._autoDismiss = setTimeout(() => {
+    winOverlay.classList.remove('visible');
+  }, 8000);
 }
 
 winOverlayClose.addEventListener('click', () => {

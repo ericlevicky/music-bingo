@@ -78,6 +78,9 @@ class GameState {
   // ─── Card management ──────────────────────────────────────────────────────
 
   setCards(cards, playlistSongs, playlistId) {
+    if (this.status === 'active') {
+      throw new Error('Cannot change playlist while a game is active. End the game first.');
+    }
     // Preserve the existing gameId so that the join URL and socket.io room remain
     // valid when the admin regenerates cards for the same session.  A new ID is
     // only minted when there is no current game (i.e. after a full newGame() reset).

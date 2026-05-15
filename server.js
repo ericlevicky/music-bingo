@@ -282,6 +282,9 @@ app.get('/api/admin/playlists', strictLimiter, ensureAdmin, ensureSpotify, async
 });
 
 app.post('/api/generate', strictLimiter, ensureAdmin, ensureSpotify, async (req, res) => {
+  if (req.user.game.status === 'active') {
+    return res.status(400).json({ error: 'Cannot change playlist while a game is active. End the game first.' });
+  }
   const { playlistId, contacts } = req.body;
 
   if (!playlistId) {
@@ -401,6 +404,9 @@ app.delete('/api/cards/:id', strictLimiter, ensureAdmin, (req, res) => {
  * Cards are created on-demand when players join via the link.
  */
 app.post('/api/game/setup', strictLimiter, ensureAdmin, ensureSpotify, async (req, res) => {
+  if (req.user.game.status === 'active') {
+    return res.status(400).json({ error: 'Cannot change playlist while a game is active. End the game first.' });
+  }
   const { playlistId } = req.body;
   if (!playlistId) {
     return res.status(400).json({ error: 'playlistId is required.' });
