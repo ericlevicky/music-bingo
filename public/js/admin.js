@@ -602,7 +602,14 @@ function updateGameStatus(status) {
     if (!existingBanner) {
       const banner = document.createElement('div');
       banner.className = 'playlist-lock-banner';
-      banner.innerHTML = '<span class="lock-icon">🔒</span><span class="lock-text">Playlist is locked while the game is active</span>';
+      const icon = document.createElement('span');
+      icon.className = 'lock-icon';
+      icon.textContent = '🔒';
+      const text = document.createElement('span');
+      text.className = 'lock-text';
+      text.textContent = 'Playlist is locked while the game is active';
+      banner.appendChild(icon);
+      banner.appendChild(text);
       playlistSection.querySelector('.step-header').insertAdjacentElement('afterend', banner);
     }
   } else {
