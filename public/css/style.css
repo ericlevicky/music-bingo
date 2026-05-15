@@ -223,7 +223,9 @@ input:focus { border-color: var(--green); background: rgba(255,255,255,.06); }
 
 .bingo-cell {
   aspect-ratio: 1;
-  background: linear-gradient(145deg, var(--surface2), #222);
+  background: rgba(255,255,255,.04);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -234,48 +236,48 @@ input:focus { border-color: var(--green); background: rgba(255,255,255,.06); }
   cursor: pointer;
   font-size: .68rem;
   line-height: 1.25;
-  border: 2px solid rgba(255,255,255,.06);
+  border: 1.5px solid rgba(255,255,255,.08);
   transition: background .25s ease, border-color .25s ease, transform .25s ease, box-shadow .25s ease;
   user-select: none;
   touch-action: manipulation;
   overflow: hidden;
   overflow-wrap: break-word;
   word-break: break-word;
-  box-shadow: 0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.05);
   position: relative;
 }
 .bingo-cell:hover:not(.free):not(.free-disabled) {
-  background: linear-gradient(145deg, #363636, #2a2a2a);
+  background: rgba(255,255,255,.08);
   transform: scale(1.04);
   border-color: rgba(29,185,84,.3);
   box-shadow: 0 4px 16px rgba(29,185,84,.15), 0 2px 8px rgba(0,0,0,.4);
 }
 .bingo-cell.free {
-  background: linear-gradient(135deg, rgba(29,185,84,.22), rgba(29,185,84,.08));
-  border-color: var(--green);
+  background: rgba(29,185,84,.12);
+  border-color: rgba(29,185,84,.4);
   cursor: default;
   color: var(--green);
   font-weight: 700;
   font-size: .85rem;
-  box-shadow: 0 0 20px rgba(29,185,84,.15), inset 0 0 15px rgba(29,185,84,.08);
+  box-shadow: 0 0 20px rgba(29,185,84,.15), inset 0 0 15px rgba(29,185,84,.06);
 }
 .bingo-cell.free-disabled {
-  background: var(--surface2);
-  border-color: #333;
+  background: rgba(255,255,255,.03);
+  border-color: rgba(255,255,255,.06);
   cursor: default;
   opacity: .4;
   box-shadow: none;
 }
 .bingo-cell.played {
-  border-color: rgba(29,185,84,.45);
-  background: linear-gradient(145deg, rgba(29,185,84,.1), rgba(29,185,84,.03));
+  border-color: rgba(29,185,84,.4);
+  background: rgba(29,185,84,.08);
 }
 .bingo-cell.marked {
   background: linear-gradient(135deg, #1db954, #17a348) !important;
-  border-color: var(--green-d) !important;
+  border-color: rgba(29,185,84,.6) !important;
   color: #000 !important;
   font-weight: 700;
-  box-shadow: 0 0 16px rgba(29,185,84,.4), 0 4px 12px rgba(0,0,0,.3) !important;
+  box-shadow: 0 0 20px rgba(29,185,84,.45), 0 4px 12px rgba(0,0,0,.3) !important;
   transform: scale(1.02);
 }
 .bingo-cell.hint {
@@ -413,6 +415,13 @@ tr:first-child td { color: var(--gold); font-weight: 700; }
   min-height: 80vh;
   text-align: center;
   gap: 1.5rem;
+  padding: 2rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
 }
 .splash h1 { font-size: 3rem; }
 .splash .emoji { font-size: 4rem; display: block; }
@@ -814,7 +823,7 @@ details.inline-collapse > .collapse-body {
 
 .bingo-msg { text-align: center; }
 
-.songs-history-card { margin-top: 1.5rem; }
+.songs-history-card { margin-top: 1.5rem; background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border); }
 .played-list {
   padding-left: 1.25rem;
   line-height: 1.9;
@@ -837,9 +846,11 @@ details.inline-collapse > .collapse-body {
   margin-bottom: .5rem;
   gap: .6rem;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--surface2), rgba(29,185,84,.06));
-  border: 1px solid rgba(29,185,84,.12);
-  border-radius: 10px;
+  background: rgba(29,185,84,.06);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(29,185,84,.15);
+  border-radius: var(--radius);
 }
 .card-page #now-playing .np-info {
   min-width: 0;        /* allow flex child to shrink below content size */
@@ -959,7 +970,9 @@ details.inline-collapse > .collapse-body {
   left: 0;
   right: 0;
   padding: .4rem 1rem .85rem;
-  background: linear-gradient(to top, rgba(18,18,18,.97) 60%, transparent);
+  background: linear-gradient(to top, rgba(10,10,15,.95) 60%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
   align-items: center;
