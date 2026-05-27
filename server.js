@@ -422,11 +422,25 @@ app.post('/api/game/setup', strictLimiter, ensureAdmin, ensureSpotify, async (re
         error: `Playlist only has ${songs.length} tracks. At least 24 are required.`,
       });
     }
-    // Deindex old cards and reset before creating a fresh game link.
-    store.deindexCards(req.user.googleId);
-    req.user.game.setCards([], songs, pid);
+    // Preserve existing cards but regenerate their grids with the new playlist.
+    const hadExistingCards = req.user.game.cards.length > 0;
+    if (hadExistingCards && songs.length >= 25) {
+      const existingCards = req.user.game.cards;
+      for (const card of existingCards) {
+        card.grid = generateGrid(songs);
+      }
+      req.user.game.setCards(existingCards, songs, pid);
+    } else {
+      // No existing cards or not enough songs – start fresh.
+      store.deindexCards(req.user.googleId);
+      req.user.game.setCards([], songs, pid);
+    }
 
     const joinUrl = `${req.protocol}://${req.get('host')}/?game=${req.user.game.gameId}`;
+    // Notify connected players that their boards have been regenerated.
+    if (hadExistingCards && req.user.game.gameId) {
+      io.to(`game:${req.user.game.gameId}`).emit('game:reset');
+    }
     res.json({
       message: `Game link created with ${songs.length} songs.`,
       gameId: req.user.game.gameId,
@@ -441,6 +455,9 @@ app.post('/api/game/setup', strictLimiter, ensureAdmin, ensureSpotify, async (re
 
 /** Create a new Spotify playlist from an existing one with a trimmed song count. */
 app.post('/api/playlists/create-trimmed', strictLimiter, ensureAdmin, ensureSpotify, async (req, res) => {
+  if (req.user.game.status === 'active') {
+    return res.status(409).json({ error: 'Cannot trim playlist while a game is in progress.' });
+  }
   const { sourcePlaylistId, songCount, name } = req.body;
   if (!sourcePlaylistId) {
     return res.status(400).json({ error: 'sourcePlaylistId is required.' });
@@ -465,6 +482,12 @@ app.post('/api/playlists/create-trimmed', strictLimiter, ensureAdmin, ensureSpot
 app.post('/api/game/start', strictLimiter, ensureAdmin, (req, res) => {
   try {
     req.user.game.start();
+    // Regenerate grids for all existing cards so players get fresh boards.
+    if (req.user.game.playlistSongs && req.user.game.playlistSongs.length >= 25) {
+      for (const card of req.user.game.cards) {
+        card.grid = generateGrid(req.user.game.playlistSongs);
+      }
+    }
     startPolling(req.user);
     io.to(`game:${req.user.game.gameId}`).emit('game:started', req.user.game.toJSON());
     res.json({ message: 'Game started.' });
