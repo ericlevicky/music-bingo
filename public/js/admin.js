@@ -54,6 +54,8 @@ const optFreeSpace      = document.getElementById('opt-free-space');
 const optAllowCelebration = document.getElementById('opt-allow-celebration');
 const optBingoMode      = document.getElementById('opt-bingo-mode');
 const optionsMsg        = document.getElementById('options-msg');
+const cfgPlaylistSelect = document.getElementById('cfg-playlist-select');
+const cfgModeSelect     = document.getElementById('cfg-mode-select');
 
 // ─── Admin profile ────────────────────────────────────────────────────────────
 let currentAdminId   = null;
@@ -559,6 +561,8 @@ function updateGameStatus(status) {
   refreshBtn.disabled        = lockPlaylist;
   setupBtn.disabled          = lockPlaylist;
   generateBtn.disabled       = lockPlaylist;
+  cfgPlaylistSelect.disabled = lockPlaylist;
+  cfgModeSelect.disabled     = lockPlaylist;
 
   // Visual lock indicator on the playlist section
   const playlistSection = document.getElementById('playlist-section');
@@ -591,16 +595,23 @@ function updateGameStatus(status) {
 }
 
 function updateGameConfigBar() {
-  const modeLabels = {
-    'any-line':      'Any line',
-    'postage-stamp': 'Postage stamp',
-    'full-board':    'Full board',
-    'x-pattern':     'X pattern',
-  };
-  document.getElementById('cfg-playlist-val').textContent = currentPlaylistName || '—';
+  // Sync config bar playlist dropdown with the main playlist select
+  const mainOptions = Array.from(playlistSelect.options).filter(o => o.value);
+  const currentCfgVal = cfgPlaylistSelect.value;
+  cfgPlaylistSelect.innerHTML = '<option value="">—</option>' +
+    mainOptions.map(o => `<option value="${escAttr(o.value)}" data-name="${escAttr(o.dataset.name || '')}"${o.disabled ? ' disabled' : ''}>${escHtml(o.dataset.name || o.text)}</option>`).join('');
+  // Restore/sync selection
+  if (playlistSelect.value) {
+    cfgPlaylistSelect.value = playlistSelect.value;
+  } else if (currentCfgVal) {
+    cfgPlaylistSelect.value = currentCfgVal;
+  }
+
+  // Sync mode
+  cfgModeSelect.value = optBingoMode.value;
+
   const playerCount = cardListEl.querySelectorAll('.player-list-item').length;
-  document.getElementById('cfg-players-val').textContent  = playerCount;
-  document.getElementById('cfg-mode-val').textContent     = modeLabels[optBingoMode.value] || optBingoMode.value;
+  document.getElementById('cfg-players-val').textContent = playerCount;
 }
 
 function startEmojiRain(emoji) {
@@ -707,6 +718,19 @@ async function savePlayerOptions() {
 });
 optBingoMode.addEventListener('change', savePlayerOptions);
 optBingoMode.addEventListener('change', updateGameConfigBar);
+
+// ─── Config bar dropdowns (Game section) ──────────────────────────────────────
+cfgPlaylistSelect.addEventListener('change', () => {
+  // Sync main playlist select and trigger same logic
+  playlistSelect.value = cfgPlaylistSelect.value;
+  playlistSelect.dispatchEvent(new Event('change'));
+});
+
+cfgModeSelect.addEventListener('change', () => {
+  // Sync the game settings bingo mode and trigger save
+  optBingoMode.value = cfgModeSelect.value;
+  optBingoMode.dispatchEvent(new Event('change'));
+});
 
 // ─── Socket events ────────────────────────────────────────────────────────────
 socket.on('game:state', (state) => {
