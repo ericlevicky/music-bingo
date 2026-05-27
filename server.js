@@ -479,8 +479,32 @@ app.post('/api/playlists/create-trimmed', strictLimiter, ensureAdmin, ensureSpot
   }
 });
 
-app.post('/api/game/start', strictLimiter, ensureAdmin, (req, res) => {
+app.post('/api/game/start', strictLimiter, ensureAdmin, async (req, res) => {
   try {
+    // If the admin selected a different playlist in the UI, update the game
+    // state before starting so players get cards from the correct playlist.
+    const { playlistId } = req.body || {};
+    if (playlistId) {
+      const pid = extractPlaylistId(playlistId);
+      if (pid && pid !== req.user.game.playlistId) {
+        if (!req.user.hasSpotify()) {
+          return res.status(400).json({ error: 'Spotify not connected. Cannot switch playlist.' });
+        }
+        const songs = await req.user.spotifyClient.getPlaylistSongs(pid);
+        if (songs.length < 24) {
+          return res.status(400).json({
+            error: `Playlist only has ${songs.length} tracks. At least 24 are required.`,
+          });
+        }
+        // Regenerate grids for existing cards with the new playlist's songs.
+        const existingCards = req.user.game.cards;
+        for (const card of existingCards) {
+          card.grid = generateGrid(songs);
+        }
+        req.user.game.setCards(existingCards, songs, pid);
+      }
+    }
+
     req.user.game.start();
     // Regenerate grids for all existing cards so players get fresh boards.
     if (req.user.game.playlistSongs && req.user.game.playlistSongs.length >= 25) {
