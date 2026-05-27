@@ -39,6 +39,7 @@ const winOverlay      = document.getElementById('win-overlay');
 const winOverlayTitle = document.getElementById('win-overlay-title');
 const winOverlaySub   = document.getElementById('win-overlay-sub');
 const winOverlayClose = document.getElementById('win-overlay-close');
+const playlistLink    = document.getElementById('playlist-link');
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const cardId = window.location.pathname.split('/').pop();
@@ -48,6 +49,7 @@ let gameStatus  = 'idle';
 let playedSongIds = new Set();
 let markedCells   = new Set(); // "row,col" strings
 let currentSong   = null;     // currently playing track
+let playlistId    = null;     // Spotify playlist ID for link
 let winnerData    = null;     // set after this card claims a valid bingo
 let playerOptions = {
   showSongHistory:  true,
@@ -177,6 +179,10 @@ async function loadCard() {
     // Apply the admin's current settings immediately so the first render is correct.
     if (card.playerOptions) {
       playerOptions = { ...playerOptions, ...card.playerOptions };
+    }
+    if (card.playlistId) {
+      playlistId = card.playlistId;
+      updatePlaylistLink();
     }
     markedCells = loadMarked();
     renderGrid();
@@ -342,6 +348,11 @@ bingoBtn.addEventListener('click', async () => {
 socket.on('game:state', (state) => {
   updateGameStatus(state.status);
 
+  if (state.playlistId) {
+    playlistId = state.playlistId;
+    updatePlaylistLink();
+  }
+
   if (state.playerOptions) {
     playerOptions = { ...playerOptions, ...state.playerOptions };
     applyPlayerOptions();
@@ -452,6 +463,16 @@ function showNowPlaying(song) {
   if (playerOptions.showNowPlaying) nowPlaying.style.display = 'flex';
 }
 
+/** Show or hide the playlist link inside the now-playing banner. */
+function updatePlaylistLink() {
+  if (playlistId && playerOptions.showNowPlaying) {
+    playlistLink.href = `https://open.spotify.com/playlist/${playlistId}`;
+    playlistLink.style.display = '';
+  } else {
+    playlistLink.style.display = 'none';
+  }
+}
+
 /** Apply current playerOptions to all visible elements. */
 function applyPlayerOptions() {
   // When free space is re-enabled, drop the center cell from markedCells so it
@@ -484,6 +505,8 @@ function applyPlayerOptions() {
   } else if (currentSong) {
     nowPlaying.style.display = 'flex';
   }
+  // Playlist link visibility follows showNowPlaying
+  updatePlaylistLink();
   // Re-render grid to reflect freeSpace change (and restore marked state)
   if (card) renderGrid();
   // Cell hints
