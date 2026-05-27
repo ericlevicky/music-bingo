@@ -53,42 +53,6 @@ describe('GameState.setCards() – gameId preservation', () => {
   });
 });
 
-describe('GameState.updatePlaylist()', () => {
-  test('updates playlistSongs and playlistId without changing gameId or cards', () => {
-    const game = new GameState();
-    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
-    const gameId = game.gameId;
-
-    const newSongs = makeSongs(30);
-    game.updatePlaylist(newSongs, 'playlist-2');
-
-    expect(game.gameId).toBe(gameId);
-    expect(game.cards).toHaveLength(2);
-    expect(game.playlistSongs).toHaveLength(30);
-    expect(game.playlistId).toBe('playlist-2');
-  });
-
-  test('throws when trying to change playlist while game is active', () => {
-    const game = new GameState();
-    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
-    game.start();
-    expect(() => game.updatePlaylist(makeSongs(24), 'playlist-2')).toThrow();
-  });
-
-  test('is allowed when game has ended', () => {
-    const game = new GameState();
-    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
-    game.start();
-    game.end();
-    expect(() => game.updatePlaylist(makeSongs(24), 'playlist-2')).not.toThrow();
-  });
-
-  test('is allowed when game is idle', () => {
-    const game = new GameState();
-    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
-    expect(() => game.updatePlaylist(makeSongs(24), 'playlist-2')).not.toThrow();
-  });
-});
 
 describe('GameState.newGame()', () => {
   test('clears gameId, cards, playlistSongs and status', () => {
@@ -244,9 +208,10 @@ describe('GameState.end()', () => {
     expect(game.playedSongs).toHaveLength(0);
 
     game.end();
-    // Song 1 should now be in history because the game ended
-    expect(game.playedSongs).toHaveLength(1);
-    expect(game.playedSongs[0].id).toBe('song-1');
+    // Played songs are cleared on end() so they don't carry over to the next
+    // round.  The song was added to history then immediately cleared.
+    expect(game.playedSongs).toHaveLength(0);
+    expect(game.playedSongIds.size).toBe(0);
   });
 });
 
@@ -437,5 +402,97 @@ describe('GameState song history', () => {
     game.finishCurrentSong(); // nothing playing yet
     expect(game.playedSongs).toHaveLength(0);
     expect(game.currentSong).toBeNull();
+  });
+});
+
+// ─── Lifecycle: automatic clearing of played songs ──────────────────────────
+
+describe('GameState lifecycle – played songs are cleared automatically', () => {
+  test('end() clears playedSongs and playedSongIds', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+
+    game.recordSong(makeSong(1));
+    game.recordSong(makeSong(2)); // song-1 goes to history
+    expect(game.playedSongs).toHaveLength(1);
+    expect(game.playedSongIds.size).toBe(1);
+
+    game.end();
+    expect(game.playedSongs).toHaveLength(0);
+    expect(game.playedSongIds.size).toBe(0);
+  });
+
+  test('start() clears any residual playedSongs from a previous session', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+
+    // Manually inject stale state (simulating a bug scenario)
+    game.playedSongs = [{ id: 'stale', name: 'Stale Song' }];
+    game.playedSongIds = new Set(['stale']);
+
+    game.start();
+    expect(game.playedSongs).toHaveLength(0);
+    expect(game.playedSongIds.size).toBe(0);
+  });
+
+  test('setCards() clears playedSongs when switching playlists after a game ends', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+    game.start();
+    game.recordSong(makeSong(1));
+    game.recordSong(makeSong(2));
+    game.end();
+
+    // Admin selects a new playlist and regenerates cards
+    game.setCards(makeCards(3), makeSongs(30), 'playlist-2');
+    expect(game.playedSongs).toHaveLength(0);
+    expect(game.playedSongIds.size).toBe(0);
+  });
+
+  test('full workflow: end game → change playlist → start new game has clean state', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+
+    // Play first game
+    game.start();
+    game.recordSong(makeSong(1));
+    game.recordSong(makeSong(2));
+    game.recordSong(makeSong(3));
+    game.end();
+
+    // Change playlist and regenerate cards
+    game.setCards(makeCards(3), makeSongs(30), 'playlist-2');
+
+    // Start second game – everything should be clean
+    game.start();
+    expect(game.playedSongs).toHaveLength(0);
+    expect(game.playedSongIds.size).toBe(0);
+    expect(game.currentSong).toBeNull();
+    expect(game.winners).toHaveLength(0);
+    expect(game.status).toBe('active');
+  });
+
+  test('full workflow: end game → reset → start with same playlist has clean state', () => {
+    const game = new GameState();
+    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
+
+    // Play first game
+    game.start();
+    game.recordSong(makeSong(1));
+    game.recordSong(makeSong(2));
+    game.end();
+
+    // Reset preserves cards/playlist but clears progress
+    game.reset();
+    expect(game.playedSongs).toHaveLength(0);
+    expect(game.playedSongIds.size).toBe(0);
+
+    // Start second game
+    game.start();
+    expect(game.playedSongs).toHaveLength(0);
+    expect(game.playedSongIds.size).toBe(0);
+    expect(game.currentSong).toBeNull();
+    expect(game.status).toBe('active');
   });
 });

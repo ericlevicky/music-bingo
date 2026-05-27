@@ -17,7 +17,6 @@ const trimSongCount     = document.getElementById('trim-song-count');
 const trimBtn           = document.getElementById('trim-btn');
 const trimMsg           = document.getElementById('trim-msg');
 const setupBtn          = document.getElementById('setup-btn');
-const changePlaylistBtn = document.getElementById('change-playlist-btn');
 const setupMsg          = document.getElementById('setup-msg');
 const gameLinkSection   = document.getElementById('game-link-section');
 const gameLinkInput     = document.getElementById('game-link-input');
@@ -324,8 +323,6 @@ function updateGameLinkDisplay() {
   const joinUrl = window.location.origin + '/?game=' + currentGameId;
   gameLinkInput.value = joinUrl;
   gameLinkSection.style.display = 'block';
-  // Show the "Change Playlist" button once a game link exists.
-  changePlaylistBtn.style.display = '';
 }
 
 copyLinkBtn.addEventListener('click', () => {
@@ -339,40 +336,6 @@ copyLinkBtn.addEventListener('click', () => {
     copyLinkBtn.textContent = '✓ Copied!';
     setTimeout(() => { copyLinkBtn.textContent = 'Copy'; }, 2000);
   });
-});
-
-// ─── Change playlist (keep existing links) ────────────────────────────────────
-changePlaylistBtn.addEventListener('click', async () => {
-  const playlistId = playlistSelect.value;
-  if (!playlistId) { setAlert(setupMsg, 'Please select a new playlist first.', 'error'); return; }
-
-  if (!confirm(
-    'Change playlist?\n\n' +
-    '• Card grids will be regenerated with songs from the new playlist\n' +
-    '• All existing player links remain valid\n' +
-    '• Players\' marked cells will be cleared\n' +
-    '• Not allowed while a game is active'
-  )) return;
-
-  changePlaylistBtn.disabled = true;
-  changePlaylistBtn.textContent = 'Updating…';
-  setAlert(setupMsg, '', '');
-
-  try {
-    const res = await fetch('/api/game/change-playlist', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ playlistId }),
-    });
-    const data = await res.json();
-    if (!res.ok) { setAlert(setupMsg, data.error, 'error'); return; }
-    setAlert(setupMsg, `✓ ${data.message}`, 'success');
-  } catch (err) {
-    setAlert(setupMsg, 'Network error: ' + err.message, 'error');
-  } finally {
-    changePlaylistBtn.disabled = false;
-    changePlaylistBtn.textContent = '↺ Change Playlist';
-  }
 });
 
 // ─── Contacts / total cards preview ──────────────────────────────────────────
@@ -557,7 +520,6 @@ newGameBtn.addEventListener('click', async () => {
     // Clear all UI state
     currentGameId = null;
     gameLinkSection.style.display = 'none';
-    changePlaylistBtn.style.display = 'none';
     cardListSection.style.display = 'none';
     cardListEl.innerHTML = '';
     updatePlayerCount();
@@ -591,7 +553,6 @@ function updateGameStatus(status) {
   playlistSelect.disabled    = lockPlaylist;
   refreshBtn.disabled        = lockPlaylist;
   setupBtn.disabled          = lockPlaylist;
-  changePlaylistBtn.disabled = lockPlaylist;
   generateBtn.disabled       = lockPlaylist;
 
   // Visual lock indicator on the playlist section
@@ -762,11 +723,6 @@ socket.on('game:ended',   (state) => {
   nowPlaying.style.display = 'none';
 });
 socket.on('game:reset',   ()      => { updateGameStatus('idle'); });
-socket.on('game:playlist-changed', ({ songCount } = {}) => {
-  if (songCount) {
-    setAlert(setupMsg, `✓ Playlist changed — ${songCount} songs loaded. All player card grids have been updated.`, 'success');
-  }
-});
 socket.on('game:new', () => { updateGameStatus('idle'); });
 
 socket.on('song:playing', ({ song, previousSong }) => {
