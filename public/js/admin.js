@@ -52,7 +52,6 @@ const optHint           = document.getElementById('opt-hint');
 const optStrictValid    = document.getElementById('opt-strict-validation');
 const optFreeSpace      = document.getElementById('opt-free-space');
 const optAllowCelebration = document.getElementById('opt-allow-celebration');
-const optBingoMode      = document.getElementById('opt-bingo-mode');
 const optionsMsg        = document.getElementById('options-msg');
 const cfgPlaylistSelect = document.getElementById('cfg-playlist-select');
 const cfgModeSelect     = document.getElementById('cfg-mode-select');
@@ -507,7 +506,7 @@ resetBtn.addEventListener('click', async () => {
   winnersTable.style.display = 'none';
   noWinnersMsg.style.display = 'block';
   nowPlaying.style.display = 'none';
-  optBingoMode.value = 'any-line';
+  cfgModeSelect.value = 'any-line';
   updateGameConfigBar();
   setAlert(gameMsg, '↺ Ready for another round! Player links are still valid — same cards, marked cells cleared.', 'info');
 });
@@ -562,7 +561,6 @@ function updateGameStatus(status) {
   setupBtn.disabled          = lockPlaylist;
   generateBtn.disabled       = lockPlaylist;
   cfgPlaylistSelect.disabled = lockPlaylist;
-  cfgModeSelect.disabled     = lockPlaylist;
 
   // Visual lock indicator on the playlist section
   const playlistSection = document.getElementById('playlist-section');
@@ -607,8 +605,7 @@ function updateGameConfigBar() {
     cfgPlaylistSelect.value = currentCfgVal;
   }
 
-  // Sync mode
-  cfgModeSelect.value = optBingoMode.value;
+  // Mode value is directly in cfgModeSelect
 
   const playerCount = cardListEl.querySelectorAll('.player-list-item').length;
   document.getElementById('cfg-players-val').textContent = playerCount;
@@ -683,7 +680,7 @@ function syncOptionCheckboxes(opts) {
   if (typeof opts.strictValidation  === 'boolean') optStrictValid.checked = opts.strictValidation;
   if (typeof opts.freeSpace         === 'boolean') optFreeSpace.checked   = opts.freeSpace;
   if (typeof opts.allowCelebration  === 'boolean') optAllowCelebration.checked = opts.allowCelebration;
-  if (typeof opts.bingoMode         === 'string')  optBingoMode.value     = opts.bingoMode;
+  if (typeof opts.bingoMode         === 'string')  cfgModeSelect.value     = opts.bingoMode;
 }
 
 async function savePlayerOptions() {
@@ -698,7 +695,7 @@ async function savePlayerOptions() {
         strictValidation: optStrictValid.checked,
         freeSpace:        optFreeSpace.checked,
         allowCelebration: optAllowCelebration.checked,
-        bingoMode:        optBingoMode.value,
+        bingoMode:        cfgModeSelect.value,
       }),
     });
     if (!res.ok) {
@@ -716,8 +713,7 @@ async function savePlayerOptions() {
 [optSongHistory, optNowPlaying, optHint, optStrictValid, optFreeSpace, optAllowCelebration].forEach((cb) => {
   cb.addEventListener('change', savePlayerOptions);
 });
-optBingoMode.addEventListener('change', savePlayerOptions);
-optBingoMode.addEventListener('change', updateGameConfigBar);
+// Mode change is handled by cfgModeSelect listener below
 
 // ─── Config bar dropdowns (Game section) ──────────────────────────────────────
 cfgPlaylistSelect.addEventListener('change', () => {
@@ -727,9 +723,9 @@ cfgPlaylistSelect.addEventListener('change', () => {
 });
 
 cfgModeSelect.addEventListener('change', () => {
-  // Sync the game settings bingo mode and trigger save
-  optBingoMode.value = cfgModeSelect.value;
-  optBingoMode.dispatchEvent(new Event('change'));
+  // Save options and update config bar display
+  savePlayerOptions();
+  updateGameConfigBar();
 });
 
 // ─── Socket events ────────────────────────────────────────────────────────────
@@ -854,8 +850,8 @@ function updateStepProgress() {
     if (setupPanel.open && !setupPanel.dataset.userOpened) {
       setupPanel.open = false;
     }
-    const modeText = optBingoMode && optBingoMode.selectedIndex >= 0
-      ? optBingoMode.options[optBingoMode.selectedIndex].text
+    const modeText = cfgModeSelect && cfgModeSelect.selectedIndex >= 0
+      ? cfgModeSelect.options[cfgModeSelect.selectedIndex].text
       : 'Any line';
     summaryText.textContent = `✓ ${currentPlaylistName || 'Playlist selected'} · ${modeText}`;
   } else {
