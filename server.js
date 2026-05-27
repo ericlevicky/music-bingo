@@ -578,7 +578,7 @@ app.get('/api/card/:id', generalLimiter, (req, res) => {
   const result = store.findCard(req.params.id);
   if (!result) return res.status(404).json({ error: 'Card not found.' });
   const { card, admin } = result;
-  res.json({ ...card, gameId: admin.game.gameId, playerOptions: { ...admin.game.playerOptions } });
+  res.json({ ...card, gameId: admin.game.gameId, playlistId: admin.game.playlistId, playerOptions: { ...admin.game.playerOptions } });
 });
 
 /** Player renames themselves; broadcast to admin. */

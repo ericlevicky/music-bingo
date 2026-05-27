@@ -906,6 +906,17 @@ details.inline-collapse > .collapse-body {
   text-overflow: ellipsis;
 }
 
+/* Playlist link inside now-playing banner */
+.playlist-link {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: .85rem;
+  text-decoration: none;
+  opacity: .7;
+  transition: opacity .15s;
+}
+.playlist-link:hover { opacity: 1; }
+
 /* BINGO header: tighter */
 .card-page .bingo-header {
   margin-bottom: 4px;
