@@ -469,7 +469,12 @@ function removeCardItem(cardId) {
 
 // ─── Game controls ────────────────────────────────────────────────────────────
 startBtn.addEventListener('click', async () => {
-  const res  = await fetch('/api/game/start', { method: 'POST' });
+  const selectedPlaylistId = playlistSelect.value || undefined;
+  const res  = await fetch('/api/game/start', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ playlistId: selectedPlaylistId }),
+  });
   const data = await res.json();
   if (!res.ok) { setAlert(gameMsg, data.error, 'error'); return; }
   setAlert(gameMsg, '▶ Game started!', 'success');
