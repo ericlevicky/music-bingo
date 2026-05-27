@@ -209,9 +209,22 @@
 
       <!-- Config summary bar -->
       <div id="game-config-bar">
-        <span><span class="cfg-label">Playlist:</span> <span id="cfg-playlist-val">—</span></span>
-        <span><span class="cfg-label">Players:</span> <span id="cfg-players-val">0</span></span>
-        <span><span class="cfg-label">Mode:</span> <span id="cfg-mode-val">Any line</span></span>
+        <span class="cfg-item">
+          <span class="cfg-label">Playlist:</span>
+          <select id="cfg-playlist-select" class="cfg-select">
+            <option value="">—</option>
+          </select>
+        </span>
+        <span class="cfg-item"><span class="cfg-label">Players:</span> <span id="cfg-players-val">0</span></span>
+        <span class="cfg-item">
+          <span class="cfg-label">Mode:</span>
+          <select id="cfg-mode-select" class="cfg-select">
+            <option value="any-line">Any line</option>
+            <option value="postage-stamp">Postage stamp</option>
+            <option value="full-board">Full board</option>
+            <option value="x-pattern">X pattern</option>
+          </select>
+        </span>
       </div>
 
       <!-- Now playing -->
