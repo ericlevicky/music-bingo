@@ -90,6 +90,10 @@ class GameState {
     this.cards = cards;
     this.playlistSongs = playlistSongs;
     this.playlistId = playlistId;
+    // Clear stale played-song history so the admin doesn't need to manually
+    // reset after switching playlists.
+    this.playedSongs = [];
+    this.playedSongIds = new Set();
   }
 
   /**
@@ -106,6 +110,9 @@ class GameState {
     }
     this.playlistSongs = songs;
     this.playlistId = pid;
+    // Clear stale played-song history when the playlist changes.
+    this.playedSongs = [];
+    this.playedSongIds = new Set();
   }
 
   /**
@@ -161,8 +168,13 @@ class GameState {
   end() {
     this.status = 'ended';
     this.endedAt = new Date().toISOString();
+    // Flush the currently-playing song into history before clearing.
     this._addCurrentSongToHistory();
     this.currentSong = null;
+    // Clear played-song history so the admin doesn't have to manually reset
+    // the list before starting the next round or switching playlists.
+    this.playedSongs = [];
+    this.playedSongIds = new Set();
   }
 
   reset() {
