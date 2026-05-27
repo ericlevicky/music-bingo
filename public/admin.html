@@ -251,17 +251,7 @@
       <div id="game-settings-section" class="setup-subsection" style="margin-top:1rem;">
         <h3>⚙️ Game Settings</h3>
         <div style="display:flex; flex-direction:column; gap:.65rem;">
-          <div class="form-group" style="max-width:360px; margin-bottom:.4rem;">
-            <label for="opt-bingo-mode">Bingo mode</label>
-            <select id="opt-bingo-mode" style="width:100%; padding:.6rem .85rem;
-              background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.1); border-radius:var(--radius);
-              color:var(--text); font-size:.95rem; outline:none;">
-              <option value="any-line">Normal – any row, column, or diagonal</option>
-              <option value="postage-stamp">Postage Stamp – any 2×2 corner block</option>
-              <option value="full-board">Full Board – every cell (blackout)</option>
-              <option value="x-pattern">X Pattern – both diagonals</option>
-            </select>
-          </div>
+          <!-- Bingo mode is controlled via the config bar above -->
           <label class="opt-label">
             <input type="checkbox" id="opt-free-space" checked />
             Enable free space (centre cell is automatically valid)
