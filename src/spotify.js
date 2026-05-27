@@ -133,6 +133,7 @@ class SpotifyClient {
           name: pl.name,
           trackCount: pl.tracks.total,
           imageUrl: pl.images && pl.images[0] ? pl.images[0].url : null,
+          url: pl.external_urls && pl.external_urls.spotify ? pl.external_urls.spotify : null,
         });
       }
       offset += limit;
