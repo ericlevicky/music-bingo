@@ -38,6 +38,7 @@ const nowPlaying        = document.getElementById('now-playing');
 const npArt             = document.getElementById('np-art');
 const npTitle           = document.getElementById('np-title');
 const npArtist          = document.getElementById('np-artist');
+const npPlaylistLink    = document.getElementById('np-playlist-link');
 const playedList        = document.getElementById('played-list');
 const noSongsMsg        = document.getElementById('no-songs-msg');
 const winnersTable      = document.getElementById('winners-table');
@@ -161,7 +162,7 @@ async function loadPlaylists() {
       : '<option value="">— Select a playlist —</option>' +
         playlists.map(p => {
           const tooFew = p.trackCount < 24;
-          return `<option value="${escAttr(p.id)}" data-name="${escAttr(p.name)}" data-track-count="${p.trackCount}"${tooFew ? ' disabled' : ''}>${escHtml(p.name)} (${p.trackCount} track${p.trackCount !== 1 ? 's' : ''})${tooFew ? ' – too few songs' : ''}</option>`;
+          return `<option value="${escAttr(p.id)}" data-name="${escAttr(p.name)}" data-track-count="${p.trackCount}" data-url="${escAttr(p.url || '')}"${tooFew ? ' disabled' : ''}>${escHtml(p.name)} (${p.trackCount} track${p.trackCount !== 1 ? 's' : ''})${tooFew ? ' – too few songs' : ''}</option>`;
         }).join('');
   } catch (err) {
     setAlert(setupMsg, 'Failed to load playlists: ' + err.message, 'error');
@@ -611,6 +612,18 @@ function updateGameConfigBar() {
   document.getElementById('cfg-players-val').textContent = playerCount;
 }
 
+function updateNpPlaylistLink() {
+  const idx = playlistSelect.selectedIndex;
+  const opt = idx >= 0 ? playlistSelect.options[idx] : null;
+  const url = opt && opt.dataset.url;
+  if (url) {
+    npPlaylistLink.href = url;
+    npPlaylistLink.style.display = '';
+  } else {
+    npPlaylistLink.style.display = 'none';
+  }
+}
+
 function startEmojiRain(emoji) {
   const container = document.createElement('div');
   container.className = 'emoji-rain';
@@ -738,6 +751,7 @@ socket.on('game:state', (state) => {
     npArt.src = state.currentSong.albumArt || '';
     npTitle.textContent  = state.currentSong.name;
     npArtist.textContent = state.currentSong.artists;
+    updateNpPlaylistLink();
     nowPlaying.style.display = 'flex';
   }
 });
@@ -755,6 +769,7 @@ socket.on('song:playing', ({ song, previousSong }) => {
   npArt.src = song.albumArt || '';
   npTitle.textContent  = song.name;
   npArtist.textContent = song.artists;
+  updateNpPlaylistLink();
   nowPlaying.style.display = 'flex';
 });
 
