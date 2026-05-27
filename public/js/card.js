@@ -371,6 +371,9 @@ socket.on('game:started', (state = {}) => {
   saveMarked();
   applyPlayerOptions();
   setAlert('', '');
+  // Reload the card from the server so the player always gets the latest grid
+  // (e.g. after the admin changed playlists between games).
+  if (card) loadCard();
 });
 
 socket.on('game:ended', () => {
