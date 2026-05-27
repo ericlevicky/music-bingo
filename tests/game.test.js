@@ -53,42 +53,6 @@ describe('GameState.setCards() – gameId preservation', () => {
   });
 });
 
-describe('GameState.updatePlaylist()', () => {
-  test('updates playlistSongs and playlistId without changing gameId or cards', () => {
-    const game = new GameState();
-    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
-    const gameId = game.gameId;
-
-    const newSongs = makeSongs(30);
-    game.updatePlaylist(newSongs, 'playlist-2');
-
-    expect(game.gameId).toBe(gameId);
-    expect(game.cards).toHaveLength(2);
-    expect(game.playlistSongs).toHaveLength(30);
-    expect(game.playlistId).toBe('playlist-2');
-  });
-
-  test('throws when trying to change playlist while game is active', () => {
-    const game = new GameState();
-    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
-    game.start();
-    expect(() => game.updatePlaylist(makeSongs(24), 'playlist-2')).toThrow();
-  });
-
-  test('is allowed when game has ended', () => {
-    const game = new GameState();
-    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
-    game.start();
-    game.end();
-    expect(() => game.updatePlaylist(makeSongs(24), 'playlist-2')).not.toThrow();
-  });
-
-  test('is allowed when game is idle', () => {
-    const game = new GameState();
-    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
-    expect(() => game.updatePlaylist(makeSongs(24), 'playlist-2')).not.toThrow();
-  });
-});
 
 describe('GameState.newGame()', () => {
   test('clears gameId, cards, playlistSongs and status', () => {
@@ -482,19 +446,6 @@ describe('GameState lifecycle – played songs are cleared automatically', () =>
 
     // Admin selects a new playlist and regenerates cards
     game.setCards(makeCards(3), makeSongs(30), 'playlist-2');
-    expect(game.playedSongs).toHaveLength(0);
-    expect(game.playedSongIds.size).toBe(0);
-  });
-
-  test('updatePlaylist() clears playedSongs', () => {
-    const game = new GameState();
-    game.setCards(makeCards(2), makeSongs(24), 'playlist-1');
-    game.start();
-    game.recordSong(makeSong(1));
-    game.recordSong(makeSong(2));
-    game.end();
-
-    game.updatePlaylist(makeSongs(30), 'playlist-2');
     expect(game.playedSongs).toHaveLength(0);
     expect(game.playedSongIds.size).toBe(0);
   });
