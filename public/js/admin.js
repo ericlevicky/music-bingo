@@ -55,6 +55,7 @@ const optFreeSpace      = document.getElementById('opt-free-space');
 const optAllowCelebration = document.getElementById('opt-allow-celebration');
 const optionsMsg        = document.getElementById('options-msg');
 const cfgPlaylistSelect = document.getElementById('cfg-playlist-select');
+const cfgPlaylistLink   = document.getElementById('cfg-playlist-link');
 const cfgModeSelect     = document.getElementById('cfg-mode-select');
 
 // ─── Admin profile ────────────────────────────────────────────────────────────
@@ -598,7 +599,7 @@ function updateGameConfigBar() {
   const mainOptions = Array.from(playlistSelect.options).filter(o => o.value);
   const currentCfgVal = cfgPlaylistSelect.value;
   cfgPlaylistSelect.innerHTML = '<option value="">—</option>' +
-    mainOptions.map(o => `<option value="${escAttr(o.value)}" data-name="${escAttr(o.dataset.name || '')}"${o.disabled ? ' disabled' : ''}>${escHtml(o.dataset.name || o.text)}</option>`).join('');
+    mainOptions.map(o => `<option value="${escAttr(o.value)}" data-name="${escAttr(o.dataset.name || '')}" data-url="${escAttr(o.dataset.url || '')}"${o.disabled ? ' disabled' : ''}>${escHtml(o.text)}</option>`).join('');
   // Restore/sync selection
   if (playlistSelect.value) {
     cfgPlaylistSelect.value = playlistSelect.value;
@@ -606,11 +607,27 @@ function updateGameConfigBar() {
     cfgPlaylistSelect.value = currentCfgVal;
   }
 
+  // Update playlist link in config bar
+  updateCfgPlaylistLink();
+
   // Mode value is directly in cfgModeSelect
 
   const playerCount = cardListEl.querySelectorAll('.player-list-item').length;
   document.getElementById('cfg-players-val').textContent = playerCount;
 }
+
+function updateCfgPlaylistLink() {
+  const opt = cfgPlaylistSelect.options[cfgPlaylistSelect.selectedIndex];
+  const url = opt && opt.dataset && opt.dataset.url;
+  if (url) {
+    cfgPlaylistLink.href = url;
+    cfgPlaylistLink.style.display = '';
+  } else {
+    cfgPlaylistLink.style.display = 'none';
+  }
+}
+
+cfgPlaylistSelect.addEventListener('change', updateCfgPlaylistLink);
 
 function updateNpPlaylistLink() {
   const idx = playlistSelect.selectedIndex;
