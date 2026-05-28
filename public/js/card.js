@@ -379,9 +379,17 @@ socket.on('game:started', (state = {}) => {
   playedSongIds = new Set();
   markedCells   = new Set();
   winnerData    = null;
+  currentSong   = null;
   saveMarked();
   applyPlayerOptions();
   setAlert('', '');
+  // Clear the played-songs history list
+  Array.from(playedList.children).forEach(el => {
+    if (el !== noSongsLi) el.remove();
+  });
+  noSongsLi.style.display = '';
+  nowPlaying.style.display = 'none';
+  updateHints(null);
   // Reload the card from the server so the player always gets the latest grid
   // (e.g. after the admin changed playlists between games).
   if (card) loadCard();
