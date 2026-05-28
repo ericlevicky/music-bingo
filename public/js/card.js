@@ -221,7 +221,7 @@ function renderGrid() {
             <span class="cell-artist">${escHtml(cell.song.artists)}</span>
           `;
           if (markedCells.has(`${r},${c}`)) div.classList.add('marked');
-          div.addEventListener('click', () => toggleCell(div, r, c, cell));
+          div.addEventListener('click', (e) => toggleCell(div, r, c, cell, e));
         }
       } else {
         div.title = `${cell.song.name} – ${cell.song.artists}`;
@@ -232,7 +232,7 @@ function renderGrid() {
         `;
         if (markedCells.has(`${r},${c}`))   div.classList.add('marked');
 
-        div.addEventListener('click', () => toggleCell(div, r, c, cell));
+        div.addEventListener('click', (e) => toggleCell(div, r, c, cell, e));
       }
 
       bingoGrid.appendChild(div);
@@ -240,7 +240,7 @@ function renderGrid() {
   });
 }
 
-function toggleCell(div, r, c, cell) {
+function toggleCell(div, r, c, cell, event) {
   if (gameStatus !== 'active') return;
   const isCurrentlyPlaying = currentSong?.id === cell.song?.id;
   if (!isCurrentlyPlaying && playerOptions.strictValidation && !playedSongIds.has(cell.song.id)) return;
@@ -252,9 +252,26 @@ function toggleCell(div, r, c, cell) {
   } else {
     markedCells.add(key);
     div.classList.add('marked');
+    burstConfetti(event);
   }
   saveMarked();
   updateMarkedCount();
+}
+
+function burstConfetti(event) {
+  if (typeof confetti !== 'function') return;
+  const x = event.clientX / window.innerWidth;
+  const y = event.clientY / window.innerHeight;
+  confetti({
+    particleCount: 40,
+    spread: 50,
+    startVelocity: 20,
+    origin: { x, y },
+    ticks: 60,
+    gravity: 0.8,
+    scalar: 0.8,
+    disableForReducedMotion: true,
+  });
 }
 
 function updateMarkedCount() {
